@@ -1,0 +1,17 @@
+# Ignore node_modules in any workspace
+**/node_modules
+
+# Ignore build and output directories from frontend and backend
+**/dist
+**/build
+
+# Ignore Git metadata
+.git
+.gitignore
+
+# Ignore environment files (adjust if you want to include them)
+.env
+
+# Ignore Dockerfiles and docker-compose files (if you don't need them in the build context)
+Dockerfile*
+docker-compose.yml

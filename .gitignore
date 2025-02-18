@@ -42,6 +42,9 @@ build/Release
 node_modules/
 jspm_packages/
 
+# Package Lock / Yarn Lock
+package-lock.json
+
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
@@ -50,6 +53,9 @@ web_modules/
 
 # Optional npm cache directory
 .npm
+
+#enviorment file
+.env
 
 # Optional eslint cache
 .eslintcache

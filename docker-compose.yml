@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:13
+    restart: always
+    environment:
+      POSTGRES_USER: your_pg_username
+      POSTGRES_PASSWORD: your_pg_password
+      POSTGRES_DB: stratosafe
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: ./backend
+    restart: on-failure
+    environment:
+      PORT: 3000
+      JWT_SECRET: your_jwt_secret_here
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: your_pg_username
+      DB_PASSWORD: your_pg_password
+      DB_DATABASE: stratosafe
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app  # Optional for live development
+
+  frontend:
+    build: ./frontend
+    restart: on-failure
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
