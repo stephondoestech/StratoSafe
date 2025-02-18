@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios, { AxiosProgressEvent } from 'axios';
+import axios from 'axios';
 import {
   AppBar,
   Toolbar,
@@ -79,7 +79,7 @@ const App: React.FC = () => {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,
         },
-        onUploadProgress: (progressEvent: AxiosProgressEvent) => {
+        onUploadProgress: (progressEvent: ProgressEvent) => {
           if (progressEvent.total) {
             const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
             setUploadProgress(percent);

@@ -4,19 +4,16 @@
         "backend",
         "frontend"
     ],
+    "resolutions": {
+        "@types/express": "^4.17.13"
+      },
     "scripts": {
         "start:backend": "yarn workspace stratosafe-backend start",
         "start:frontend": "yarn workspace stratosafe-frontend start",
         "start": "concurrently \"yarn start:backend\" \"yarn start:frontend\""
     },
     "devDependencies": {
-        "@types/cors": "^2.8.17",
-        "concurrently": "^9.1.2"
+        "concurrently": "^7.6.0"
     },
-    "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
-    "dependencies": {
-        "@types/express": "^5.0.0",
-        "@types/express-serve-static-core": "^5.0.6",
-        "react-dom": "^19.0.0"
-    }
+    "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

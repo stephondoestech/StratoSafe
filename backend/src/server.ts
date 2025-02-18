@@ -23,6 +23,23 @@ app.use(express.json());
 app.use(cors());
 app.use(helmet());
 
+// Define the path to the React build folder
+const buildPath = path.join(__dirname, '..', '..', 'frontend', 'build');
+
+// Serve static files from the React app
+app.use(express.static(buildPath));
+
+// Catch-all handler: for any request that doesn't match an API route,
+// send back the React app's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(buildPath, 'index.html'));
+});
+
+// Start the server as usual
+app.listen(process.env.PORT || 3000, () => {
+  console.log(`StratoSafe backend running at http://localhost:${process.env.PORT || 3000}`);
+});
+
 // Cast rate limiter to RequestHandler
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -32,14 +49,22 @@ app.use(limiter);
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, "uploads");
+  destination: (
+    req: Request,
+    file: Express.Multer.File,
+    cb: (error: Error | null, destination: string) => void
+  ) => {
+    const uploadDir = path.join(__dirname, '..', '..', 'frontend', 'build');
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
   },
-  filename: (req, file, cb) => {
+  filename: (
+    req: Request,
+    file: Express.Multer.File,
+    cb: (error: Error | null, filename: string) => void
+  ) => {
     const uniqueFilename = `${Date.now()}-${file.originalname}`;
     cb(null, uniqueFilename);
   },
@@ -162,9 +187,9 @@ app.post(
   })
 );
 
-app.get('/', (req, res) => {
+/* app.get('/', (req, res) => {
   res.send('Welcome to StratoSafe Backend!');
-});
+}); */
 
 app.get(
   "/files",
