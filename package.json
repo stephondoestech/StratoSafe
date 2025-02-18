@@ -10,7 +10,7 @@
     "scripts": {
         "start:backend": "yarn workspace stratosafe-backend start",
         "start:frontend": "yarn workspace stratosafe-frontend start",
-        "start": "concurrently \"yarn start:backend\" \"yarn start:frontend\""
+        "start": "concurrently \"yarn start:backend\" \"yarn start:frontend\""      
     },
     "devDependencies": {
         "concurrently": "^7.6.0"

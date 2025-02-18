@@ -8,13 +8,13 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import cors from "cors";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
+import rateLimit from 'express-rate-limit'
 import { DataSource } from "typeorm";
 import dotenv from "dotenv";
 import { User } from "./models/User";
 import { File } from "./models/File";
 
-dotenv.config();
+dotenv.config({ path: '../.env' });
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -33,11 +33,6 @@ app.use(express.static(buildPath));
 // send back the React app's index.html file.
 app.get('*', (req, res) => {
   res.sendFile(path.join(buildPath, 'index.html'));
-});
-
-// Start the server as usual
-app.listen(process.env.PORT || 3000, () => {
-  console.log(`StratoSafe backend running at http://localhost:${process.env.PORT || 3000}`);
 });
 
 // Cast rate limiter to RequestHandler
@@ -259,14 +254,14 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   res.status(500).json({ error: "Internal server error in StratoSafe" });
 });
 
-// Initialize the Data Source and start the server
+// Initialize database connection, then start the server.
 AppDataSource.initialize()
   .then(() => {
-    console.log("Postgres database connected for StratoSafe");
+    console.log('Postgres database connected for StratoSafe');
     app.listen(port, () => {
       console.log(`StratoSafe backend running at http://localhost:${port}`);
     });
   })
   .catch((err) => {
-    console.error("Error during Data Source initialization", err);
+    console.error('Error during Data Source initialization', err);
   });

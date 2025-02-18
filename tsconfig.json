@@ -1,13 +1,12 @@
 {
-    "files": [],
-    "compilerOptions": {
-      "composite": true,
-      "baseUrl": ".",
-      "skipLibCheck": true
-    },
-    "references": [
-      { "path": "./backend" },
-      { "path": "./frontend" }
-    ]
-  }
-  
+  "files": [],
+  "compilerOptions": {
+    "composite": true,
+    "baseUrl": ".",
+    "skipLibCheck": true
+  },
+  "references": [
+    { "path": "./backend" },
+    { "path": "./frontend" }
+  ]
+}

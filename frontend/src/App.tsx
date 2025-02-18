@@ -1,3 +1,4 @@
+// frontend/src/App.tsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
@@ -25,7 +26,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import LogoutIcon from '@mui/icons-material/Logout';
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'http://localhost:3001';
 
 interface FileItem {
   _id: string;
@@ -42,6 +43,7 @@ const App: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [files, setFiles] = useState<FileItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -98,13 +100,18 @@ const App: React.FC = () => {
   // Fetch the list of files
   const fetchFiles = async () => {
     try {
+      setLoading(true);
       const response = await axios.get(`${API_BASE}/files`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setFiles(response.data.files);
+      console.log('Fetched files:', response.data);
+      // Use a default empty array if the API doesn't return files
+      setFiles(response.data.files || []);
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Error fetching files.');
+    } finally {
+      setLoading(false);
     }
   };
 
