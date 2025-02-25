@@ -1,43 +1,55 @@
-version: "3.8"
-
 services:
   postgres:
-    image: postgres:13
-    restart: always
+    image: postgres:15
     environment:
-      POSTGRES_USER: your_pg_username
-      POSTGRES_PASSWORD: your_pg_password
-      POSTGRES_DB: stratosafe
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    ports:
+      - "${DB_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    networks:
+      - stratosafe-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./backend
-    restart: on-failure
-    environment:
-      PORT: 3000
-      JWT_SECRET: your_jwt_secret_here
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USERNAME: your_pg_username
-      DB_PASSWORD: your_pg_password
-      DB_DATABASE: stratosafe
-    depends_on:
-      - postgres
     ports:
-      - "3000:3000"
+      - "${PORT}:${PORT}"
+    environment:
+      - PORT=${PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE}
+    depends_on:
+      postgres:
+        condition: service_healthy
     volumes:
-      - ./backend:/app  # Optional for live development
+      - backend_uploads:/app/uploads
+    networks:
+      - stratosafe-network
 
   frontend:
     build: ./frontend
-    restart: on-failure
     ports:
-      - "3001:80"
+      - "3000:3000"
     depends_on:
       - backend
+    networks:
+      - stratosafe-network
+
+networks:
+  stratosafe-network:
+    driver: bridge
 
 volumes:
   pgdata:
+  backend_uploads:

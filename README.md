@@ -1,193 +1,196 @@
 # StratoSafe
 
-**Tagline:** *"StratoSafe – Secure Your Files in the Cloud."*
+<!-- <p align="center"> TODO
+  <img src="https://via.placeholder.com/200x200.png?text=StratoSafe" alt="StratoSafe Logo" width="200" height="200">
+</p> --> 
 
-## Overview
+<p align="center">
+  <strong>Secure Your Files in the Cloud</strong>
+</p>
 
-StratoSafe is a modern, secure cloud storage solution designed to help you safely store, manage, and share your files. Whether you're an individual needing secure personal storage or a business looking for a reliable file management solution, StratoSafe provides an intuitive, feature-rich platform built with the latest web technologies.
+<p align="center">
+  <a href="#features">Features</a> •
+  <a href="#demo">Demo</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#installation">Installation</a> •
+  <a href="#usage">Usage</a> •
+  <a href="#tech-stack">Tech Stack</a> •
+  <a href="#project-structure">Project Structure</a> •
+  <a href="#contributing">Contributing</a> •
+  <a href="#license">License</a>
+</p>
 
-The project is composed of two main components:
+## Features
 
-- **Backend:** A robust Node.js API using Express, TypeORM, and PostgreSQL. It handles user authentication, file uploads/downloads, and secure file management.
-- **Frontend:** A responsive React application styled with Material UI that offers a seamless user experience for file management, including real-time upload progress and file previews.
+- **🔐 User Authentication:** Secure login and registration with JWT and bcrypt
+- **📁 File Management:** Easily upload, download, and manage your files
+- **🔒 Privacy-Focused:** Your files are accessible only to you
+- **💻 Modern UI:** Clean, responsive design with Material UI
+- **🐳 Easy Deployment:** Docker ready for quick deployment
+- **📱 Mobile-Friendly:** Access your files on any device
 
-StratoSafe is fully containerized using Docker and Docker Compose, making deployment simple and scalable.
+## Demo
 
----
+![StratoSafe Demo](https://via.placeholder.com/800x450.png?text=StratoSafe+Demo)
 
-## Key Features
+*[Note: Replace with actual screenshots of your application once available]*
 
-- **Secure Authentication:** User registration and login secured with JWT and bcrypt.
-- **Easy File Management:** Upload, list, download, and preview files with a user-friendly interface.
-- **Modern UI:** Enjoy a sleek and responsive design powered by React and Material UI.
-- **Containerized Deployment:** Use Docker Compose to run the complete stack (backend, frontend, and PostgreSQL) with a single command.
-- **Yarn Workspaces:** Manage both the backend and frontend from a single repository using Yarn workspaces.
+## Quick Start
 
----
+The fastest way to get StratoSafe running is with Docker:
 
-## Tech Stack
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/stratosafe.git
+cd stratosafe
 
-- **Backend:** Node.js, Express, TypeORM, PostgreSQL, Multer, JWT, bcrypt, Helmet, CORS, dotenv
-- **Frontend:** React, Material UI, Axios, TypeScript
-- **Containerization:** Docker, Docker Compose
-- **Package Manager:** Yarn (with workspaces)
-
----
-
-## Directory Structure
-
-```
-StratoSafe/
-├── backend/                # Node.js backend for StratoSafe
-│   ├── src/
-│   │   ├── models/         # TypeORM models (User, File)
-│   │   └── server.ts       # Express server with API endpoints
-│   ├── package.json        # Backend dependencies & scripts
-│   ├── tsconfig.json       # TypeScript configuration
-│   └── Dockerfile          # Docker configuration for the backend
-├── frontend/               # React frontend for StratoSafe
-│   ├── public/
-│   │   └── index.html      # HTML template with StratoSafe branding
-│   ├── src/
-│   │   ├── App.tsx         # Main app component (Material UI)
-│   │   └── index.tsx       # React entry point
-│   ├── package.json        # Frontend dependencies & scripts
-│   └── Dockerfile          # Docker configuration for the frontend
-├── docker-compose.yml      # Orchestrates PostgreSQL, backend, & frontend
-├── .env                    # Environment variables (backend & Docker)
-└── README.md               # This file!
+# Start with Docker
+make docker
 ```
 
----
+Then open http://localhost:3000 in your browser.
 
-## Setup Instructions
+## Installation
 
 ### Prerequisites
 
-- [Yarn](https://yarnpkg.com/) (v1.x recommended for workspaces)
-- [Docker & Docker Compose](https://docs.docker.com/compose/install/)
-- [Node.js](https://nodejs.org/) (if running locally)
+- [Node.js](https://nodejs.org/) (v16 or later)
+- [Yarn](https://yarnpkg.com/)
+- [Docker & Docker Compose](https://docs.docker.com/compose/install/) (for containerized deployment)
+- [PostgreSQL](https://www.postgresql.org/) (if running locally without Docker)
 
-### Installing Dependencies
+### Setup
 
-This repository uses Yarn workspaces to manage dependencies for both the backend and frontend.
-
-1. **Clone the Repository:**
-
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/yourusername/stratosafe.git
    cd stratosafe
    ```
 
-2. **Install Dependencies at the Root:**
-
+2. **Install dependencies:**
    ```bash
+   make install
+   # or
    yarn install
    ```
 
-   This command installs dependencies for both the `backend` and `frontend` packages.
-
-### Local Development
-
-#### Backend
-
-1. Navigate to the backend directory:
-
-   ```bash
-   cd backend
+3. **Configure environment variables:**
+   Create a `.env` file in the root directory with the following content:
+   ```
+   PORT=3001
+   JWT_SECRET=your_secure_secret_key
+   DB_HOST=127.0.0.1  # Use 'postgres' for Docker
+   DB_PORT=5432
+   DB_USERNAME=your_db_username
+   DB_PASSWORD=your_db_password
+   DB_DATABASE=stratosafe
    ```
 
-2. Create a `.env` file in the `backend` directory (see [Environment Variables](#environment-variables) below).
-
-3. Start the backend server:
-
+4. **Build the project:**
    ```bash
-   yarn start
+   make build
+   # or
+   yarn build
    ```
 
-   The backend will run on [http://localhost:3000](http://localhost:3000).
+## Usage
 
-#### Frontend
-
-1. Open a new terminal window and navigate to the frontend directory:
-
-   ```bash
-   cd frontend
-   ```
-
-2. Start the frontend development server:
-
-   ```bash
-   yarn start
-   ```
-
-   The frontend will be available at [http://localhost:3001](http://localhost:3001).
-
-#### Running Both Concurrently
-
-From the root of the repository, you can run both services at once:
+### Running Locally
 
 ```bash
+make run
+# or
 yarn start
 ```
 
-This command uses the `concurrently` package to start both the backend and frontend.
+This will start both the backend server and the frontend development server concurrently.
 
-### Docker Deployment
+- Backend API will be available at: http://localhost:3001
+- Frontend will be available at: http://localhost:3000
 
-1. Ensure Docker and Docker Compose are installed.
+### Running with Docker
 
-2. At the root of the repository, verify your `.env` file contains the correct values (see [Environment Variables](#environment-variables)).
-
-3. Build and run the containers:
-
-   ```bash
-   docker-compose up --build
-   ```
-
-   - PostgreSQL will be available on port 5432.
-   - The backend API will run on [http://localhost:3000](http://localhost:3000).
-   - The frontend app will be available at [http://localhost:3001](http://localhost:3001).
-
-4. To stop the containers, run:
-
-   ```bash
-   docker-compose down
-   ```
-
----
-
-## Environment Variables
-
-Create a `.env` file in the project root (or within the backend directory) with the following variables:
-
-```env
-# Backend & Docker
-PORT=3000
-JWT_SECRET=your_jwt_secret_here
-DB_HOST=postgres        # Use 'postgres' if running via Docker Compose; use '127.0.0.1' for local PostgreSQL
-DB_PORT=5432
-DB_USERNAME=your_pg_username
-DB_PASSWORD=your_pg_password
-DB_DATABASE=stratosafe
+```bash
+make docker
+# or
+docker-compose up --build
 ```
 
-Replace placeholder values with your actual credentials.
+This will build and start all services using Docker Compose.
 
----
+### Makefile Commands
 
-## Why StratoSafe?
+- `make install` - Install dependencies
+- `make build` - Build the project
+- `make run` - Run the project locally
+- `make docker` - Run the project with Docker
 
-StratoSafe is designed to be more than just a file storage service. It’s built for those who value:
-- **Security:** Your data is encrypted and securely managed.
-- **Simplicity:** An intuitive interface that makes file management effortless.
-- **Scalability:** A modern architecture that grows with your needs.
-- **Innovation:** Built on cutting-edge technologies for a seamless experience.
+## Tech Stack
 
-Whether you’re an individual or a business, StratoSafe offers a secure digital space where your files find a home in the cloud.
+### Backend
+- **[Node.js](https://nodejs.org/)** - JavaScript runtime
+- **[Express](https://expressjs.com/)** - Web framework
+- **[TypeORM](https://typeorm.io/)** - ORM for database interaction
+- **[PostgreSQL](https://www.postgresql.org/)** - Relational database
+- **[JWT](https://jwt.io/)** - Authentication mechanism
+- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
 
----
+### Frontend
+- **[React](https://reactjs.org/)** - UI library
+- **[Material UI](https://mui.com/)** - Component library
+- **[React Router](https://reactrouter.com/)** - Routing
+- **[Axios](https://axios-http.com/)** - HTTP client
+- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
+
+### Infrastructure
+- **[Docker](https://www.docker.com/)** - Containerization
+- **[Docker Compose](https://docs.docker.com/compose/)** - Multi-container management
+- **[Yarn Workspaces](https://classic.yarnpkg.com/en/docs/workspaces/)** - Monorepo management
+
+## Project Structure
+
+```
+StratoSafe/
+├── backend/                # Backend (Node.js, Express, TypeORM)
+│   ├── src/
+│   │   ├── models/         # TypeORM entities (User, File)
+│   │   ├── controllers/    # API controllers
+│   │   ├── routes/         # API routes
+│   │   ├── middlewares/    # Express middlewares
+│   │   ├── data-source.ts  # TypeORM configuration
+│   │   └── server.ts       # Express server entry point
+│   ├── package.json        # Backend dependencies & scripts
+│   ├── tsconfig.json       # TypeScript configuration
+│   └── Dockerfile          # Docker configuration for backend
+├── frontend/               # Frontend (React, Material UI)
+│   ├── public/             # Static files
+│   ├── src/
+│   │   ├── components/     # React components
+│   │   ├── pages/          # Page components
+│   │   ├── services/       # API services
+│   │   ├── context/        # React context
+│   │   ├── utils/          # Utility functions
+│   │   ├── App.tsx         # Main React component
+│   │   └── index.tsx       # React entry point
+│   ├── package.json        # Frontend dependencies & scripts
+│   ├── tsconfig.json       # TypeScript configuration
+│   └── Dockerfile          # Docker configuration for frontend
+├── docker-compose.yml      # Docker Compose configuration
+├── Makefile                # Build and run commands
+├── .env                    # Environment variables
+└── package.json            # Root package.json for monorepo
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

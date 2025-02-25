@@ -1,18 +1,26 @@
-FROM node:16-alpine
+FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy backend files
-COPY backend/package*.json ./
+# Copy package files
+COPY package.json ./
+COPY tsconfig.json ./
+COPY tsconfig.build.json ./
+
+# Install dependencies
 RUN yarn install
 
-# Copy the backend source code
-COPY backend .
+# Copy source code
+COPY src ./src
 
-# Copy the React build folder from the frontend
-COPY frontend/build ./frontend/build
+# Create uploads directory
+RUN mkdir -p uploads
 
-# Expose the port the backend runs on
-EXPOSE 3000
+# Build the application with less strict TypeScript config
+RUN yarn tsc -p tsconfig.build.json
 
-CMD ["npx", "ts-node", "src/server.ts"]
+# Expose the port
+EXPOSE ${PORT}
+
+# Start the application
+CMD ["yarn", "start"]
