@@ -17,6 +17,11 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Health check endpoint
+app.get('/health', (req: Request, res: Response) => {
+  res.json({ status: 'ok', timestamp: new Date() });
+});
+
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/files", fileRoutes);
@@ -31,13 +36,24 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // Initialize database connection
-AppDataSource.initialize()
-  .then(() => {
+const startServer = async () => {
+  try {
+    await AppDataSource.initialize();
     console.log("Data Source has been initialized!");
     
     // Start server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
-  })
-  .catch((error) => console.error("Error during Data Source initialization:", error));
+  } catch (error) {
+    console.error("Error during Data Source initialization:", error);
+    
+    // Start server even if database connection fails
+    // This allows the frontend to work and show appropriate error messages
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT} (without database connection)`);
+    });
+  }
+};
+
+startServer();
