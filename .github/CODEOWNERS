@@ -1,0 +1,6 @@
+# StratoSafe CODEOWNERS file
+# This file defines who is responsible for code reviews in different parts of the codebase
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything if no specific pattern matches
+* @stephondoestech
