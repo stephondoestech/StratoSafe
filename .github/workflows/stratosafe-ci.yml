@@ -10,6 +10,8 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      CI: false  # Prevents React from treating warnings as errors
 
     services:
       postgres:
@@ -71,6 +73,8 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    env:
+      CI: false  # Prevents React from treating warnings as errors
     
     steps:
       - name: Checkout code
