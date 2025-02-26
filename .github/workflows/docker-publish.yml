@@ -10,6 +10,10 @@ on:
       - completed
     branches: [main, master]
 
+permissions:
+  contents: read
+  id-token: write  # Critical for OIDC token generation
+
 jobs:
   fetch-secrets-and-build:
     runs-on: ubuntu-latest
@@ -20,9 +24,12 @@ jobs:
 
       - name: Authenticate with HCP and get secrets
         uses: hashicorp/vault-action@v2
+        id: secrets
         with:
           url: https://api.cloud.hashicorp.com/secrets/2023-06-13
           method: jwt
+          path: jwt  # HCP Vault JWT auth path
+          role: github-actions  # Your configured HCP Vault role
           jwtGithubAudience: https://api.cloud.hashicorp.com
           jwtTtl: 300
           exportToken: true
@@ -33,14 +40,13 @@ jobs:
             apps/data/stratosafe/db_password DB_PASSWORD | DB_PASSWORD ;
             apps/data/stratosafe/jwt_secret JWT_SECRET | JWT_SECRET
 
-      - name: Log which secrets were successfully retrieved
+      - name: Validate secret retrieval
         run: |
-          echo "Retrieved the following secrets (showing variable names only, not values):"
-          [[ -n "$DOCKERHUB_USERNAME" ]] && echo "- DOCKERHUB_USERNAME" || echo "! DOCKERHUB_USERNAME missing"
-          [[ -n "$DOCKERHUB_TOKEN" ]] && echo "- DOCKERHUB_TOKEN" || echo "! DOCKERHUB_TOKEN missing"
-          [[ -n "$DB_USERNAME" ]] && echo "- DB_USERNAME" || echo "! DB_USERNAME missing"
-          [[ -n "$DB_PASSWORD" ]] && echo "- DB_PASSWORD" || echo "! DB_PASSWORD missing"
-          [[ -n "$JWT_SECRET" ]] && echo "- JWT_SECRET" || echo "! JWT_SECRET missing"
+          if [[ -z "$DOCKERHUB_USERNAME" ]]; then
+            echo "Error: Failed to retrieve DockerHub username"
+            exit 1
+          fi
+          echo "Secrets retrieved successfully"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
