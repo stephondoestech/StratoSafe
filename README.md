@@ -1,12 +1,26 @@
 # StratoSafe
 
-<!-- <p align="center"> TODO
+<p align="center">
   <img src="https://via.placeholder.com/200x200.png?text=StratoSafe" alt="StratoSafe Logo" width="200" height="200">
-</p> --> 
+</p>
 
 <p align="center">
   <strong>Secure Your Files in the Cloud</strong>
 </p>
+
+## What is StratoSafe?
+
+StratoSafe is a modern, secure cloud storage solution that allows individuals and teams to safely store, manage, and share files online. Built with TypeScript, React, and Node.js, it provides an intuitive interface for file management while maintaining robust security through JWT authentication.
+
+### Key Features
+
+- **Secure Authentication**: User accounts with email/password login protected by JWT tokens
+- **File Management**: Easily upload, download, organize, and remove files
+- **Responsive Design**: Mobile-friendly interface built with Material UI
+- **Modern Architecture**: Monorepo structure with TypeScript for both frontend and backend
+- **Containerized Deployment**: Docker-ready for easy deployment in any environment
+
+Whether you're looking for personal cloud storage or a team collaboration tool, StratoSafe offers the perfect balance of security, simplicity, and performance.
 
 <p align="center">
   <a href="#features">Features</a> •
@@ -44,7 +58,18 @@ The fastest way to get StratoSafe running is with Docker:
 git clone https://github.com/yourusername/stratosafe.git
 cd stratosafe
 
-# Start with Docker
+# Create environment file
+cat > .env << 'EOF'
+PORT=3001
+JWT_SECRET=supersecretkey123
+DB_HOST=postgres
+DB_PORT=5432
+DB_USERNAME=stratosafe_user
+DB_PASSWORD=stratosafe_password
+DB_DATABASE=stratosafe
+EOF
+
+# Build and start with Docker
 make docker
 ```
 
@@ -111,12 +136,32 @@ This will start both the backend server and the frontend development server conc
 ### Running with Docker
 
 ```bash
+# Option 1: Using the Makefile (Recommended)
 make docker
-# or
+
+# Option 2: Using Docker Compose directly
 docker-compose up --build
+
+# Run in detached mode (background)
+docker-compose up --build -d
+
+# Check container status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
 ```
 
-This will build and start all services using Docker Compose.
+This will build and start all services using Docker Compose:
+
+1. **PostgreSQL database** - Stores user accounts and file metadata
+2. **Backend API** - Node.js server running on port 3001
+3. **Frontend** - React application served on port 3000
+
+All data is persisted in Docker volumes, so you won't lose information when containers restart.
 
 ### Makefile Commands
 
@@ -146,6 +191,7 @@ This will build and start all services using Docker Compose.
 - **[Docker](https://www.docker.com/)** - Containerization
 - **[Docker Compose](https://docs.docker.com/compose/)** - Multi-container management
 - **[Yarn Workspaces](https://classic.yarnpkg.com/en/docs/workspaces/)** - Monorepo management
+- **[Nginx](https://nginx.org/)** - Web server for frontend (in Docker)
 
 ## Project Structure
 
