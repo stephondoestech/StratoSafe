@@ -15,60 +15,56 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install HCP CLI
-        run: |
-          curl -fsSL https://releases.hashicorp.com/hcp/0.65.0/hcp_0.65.0_linux_amd64.zip -o hcp.zip
-          unzip hcp.zip
-          sudo mv hcp /usr/local/bin/
-          rm hcp.zip
-          hcp --version
-
-      - name: Setup HCP credentials
+      - name: Obtain HCP OAuth Token
+        id: hcp-auth
         env:
           HCP_CLIENT_ID: ${{ secrets.HCP_CLIENT_ID }}
           HCP_CLIENT_SECRET: ${{ secrets.HCP_CLIENT_SECRET }}
-          HCP_ORGANIZATION_ID: ${{ secrets.HCP_ORGANIZATION_ID }}
-          HCP_PROJECT_ID: ${{ secrets.HCP_PROJECT_ID }}
         run: |
-          echo "Authenticating to HCP..."
-          hcp auth login --client-id $HCP_CLIENT_ID --client-secret $HCP_CLIENT_SECRET
+          # Request OAuth token from HCP
+          response=$(curl -s -X POST https://auth.idp.hashicorp.com/oauth2/token \
+            -H "Content-Type: application/json" \
+            -d '{
+              "audience": "https://api.hashicorp.cloud",
+              "grant_type": "client_credentials",
+              "client_id": "'"$HCP_CLIENT_ID"'",
+              "client_secret": "'"$HCP_CLIENT_SECRET"'"
+            }')
           
-          echo "Setting HCP context..."
-          hcp config set organization_id $HCP_ORGANIZATION_ID
-          hcp config set project_id $HCP_PROJECT_ID
+          # Extract token from response
+          token=$(echo "$response" | jq -r '.access_token')
+          
+          if [ -z "$token" ] || [ "$token" = "null" ]; then
+            echo "Failed to obtain OAuth token. Response: $response"
+            exit 1
+          fi
+          
+          # Set token as output and environment variable
+          echo "token=$token" >> $GITHUB_OUTPUT
+          echo "HCP_API_TOKEN=$token" >> $GITHUB_ENV
+          echo "Successfully obtained HCP OAuth token"
 
-      - name: Fetch secrets from HCP
-        id: fetch-secrets
+      - name: Authenticate with HCP and get secrets
+        uses: hashicorp/vault-action@v2
+        with:
+          url: https://api.cloud.hashicorp.com/secrets/2023-11-28/organizations/$HCP_ORGANIZATION_ID/projects/$HCP_PROJECT_ID/apps/$APP_NAME/secrets
+          method: token
+          token: ${{ env.HCP_API_TOKEN }}
+          secrets: |
+            apps/data/stratosafe/dockerhub_username DOCKERHUB_USERNAME | DOCKERHUB_USERNAME ;
+            apps/data/stratosafe/dockerhub_token DOCKERHUB_TOKEN | DOCKERHUB_TOKEN ;
+            apps/data/stratosafe/db_username DB_USERNAME | DB_USERNAME ;
+            apps/data/stratosafe/db_password DB_PASSWORD | DB_PASSWORD ;
+            apps/data/stratosafe/jwt_secret JWT_SECRET | JWT_SECRET
+
+      - name: Log which secrets were successfully retrieved
         run: |
-          # Define application name
-          APP_NAME="stratosafe"
-          
-          # Function to fetch a secret and set as environment variable
-          fetch_secret() {
-            local secret_name=$1
-            local env_name=$2
-            
-            echo "Fetching secret: $secret_name"
-            value=$(hcp secrets get --application-name $APP_NAME --secret-name "$secret_name" --output json | jq -r '.data')
-            
-            # Parse key=value format and extract the value
-            env_value=$(echo "$value" | cut -d= -f2-)
-            
-            # Set as environment variable for subsequent steps
-            echo "$env_name=$env_value" >> $GITHUB_ENV
-            echo "Secret $secret_name fetched and set as $env_name"
-          }
-          
-          # Fetch required secrets
-          fetch_secret "dockerhub_username" "DOCKERHUB_USERNAME"
-          fetch_secret "dockerhub_token" "DOCKERHUB_TOKEN"
-          fetch_secret "db_username" "DB_USERNAME"
-          fetch_secret "db_password" "DB_PASSWORD"
-          fetch_secret "jwt_secret" "JWT_SECRET"
-          
-          # Log which secrets were successfully set (without showing values)
           echo "Retrieved the following secrets (showing variable names only, not values):"
-          env | grep -E '^(DOCKERHUB_USERNAME|DOCKERHUB_TOKEN|DB_USERNAME|DB_PASSWORD|JWT_SECRET)=' | cut -d= -f1 | sort
+          [[ -n "$DOCKERHUB_USERNAME" ]] && echo "- DOCKERHUB_USERNAME" || echo "! DOCKERHUB_USERNAME missing"
+          [[ -n "$DOCKERHUB_TOKEN" ]] && echo "- DOCKERHUB_TOKEN" || echo "! DOCKERHUB_TOKEN missing"
+          [[ -n "$DB_USERNAME" ]] && echo "- DB_USERNAME" || echo "! DB_USERNAME missing"
+          [[ -n "$DB_PASSWORD" ]] && echo "- DB_PASSWORD" || echo "! DB_PASSWORD missing"
+          [[ -n "$JWT_SECRET" ]] && echo "- JWT_SECRET" || echo "! JWT_SECRET missing"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
