@@ -3,16 +3,9 @@ name: Docker Hub Build and Publish
 on:
   push:
     branches: [main, master]
-  workflow_dispatch:  # Allow manual triggering
-  workflow_run:
-    workflows: ["Build and Test", "Lint"]
-    types:
-      - completed
+  pull_request:
     branches: [main, master]
-
-permissions:
-  contents: read
-  id-token: write  # Critical for OIDC token generation
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   fetch-secrets-and-build:
@@ -22,31 +15,60 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Authenticate with HCP and get secrets
-        uses: hashicorp/vault-action@v2
-        id: secrets
-        with:
-          url: https://api.cloud.hashicorp.com/secrets/2023-06-13
-          method: jwt
-          path: jwt  # HCP Vault JWT auth path
-          role: github-actions  # Your configured HCP Vault role
-          jwtGithubAudience: https://api.cloud.hashicorp.com
-          jwtTtl: 300
-          exportToken: true
-          secrets: |
-            apps/data/stratosafe/dockerhub_username DOCKERHUB_USERNAME | DOCKERHUB_USERNAME ;
-            apps/data/stratosafe/dockerhub_token DOCKERHUB_TOKEN | DOCKERHUB_TOKEN ;
-            apps/data/stratosafe/db_username DB_USERNAME | DB_USERNAME ;
-            apps/data/stratosafe/db_password DB_PASSWORD | DB_PASSWORD ;
-            apps/data/stratosafe/jwt_secret JWT_SECRET | JWT_SECRET
-
-      - name: Validate secret retrieval
+      - name: Install HCP CLI
         run: |
-          if [[ -z "$DOCKERHUB_USERNAME" ]]; then
-            echo "Error: Failed to retrieve DockerHub username"
-            exit 1
-          fi
-          echo "Secrets retrieved successfully"
+          curl -fsSL https://releases.hashicorp.com/hcp/0.65.0/hcp_0.65.0_linux_amd64.zip -o hcp.zip
+          unzip hcp.zip
+          sudo mv hcp /usr/local/bin/
+          rm hcp.zip
+          hcp --version
+
+      - name: Setup HCP credentials
+        env:
+          HCP_CLIENT_ID: ${{ secrets.HCP_CLIENT_ID }}
+          HCP_CLIENT_SECRET: ${{ secrets.HCP_CLIENT_SECRET }}
+          HCP_ORGANIZATION_ID: ${{ secrets.HCP_ORGANIZATION_ID }}
+          HCP_PROJECT_ID: ${{ secrets.HCP_PROJECT_ID }}
+        run: |
+          echo "Authenticating to HCP..."
+          hcp auth login --client-id $HCP_CLIENT_ID --client-secret $HCP_CLIENT_SECRET
+          
+          echo "Setting HCP context..."
+          hcp config set organization_id $HCP_ORGANIZATION_ID
+          hcp config set project_id $HCP_PROJECT_ID
+
+      - name: Fetch secrets from HCP
+        id: fetch-secrets
+        run: |
+          # Define application name
+          APP_NAME="stratosafe"
+          
+          # Function to fetch a secret and set as environment variable
+          fetch_secret() {
+            local secret_name=$1
+            local env_name=$2
+            
+            echo "Fetching secret: $secret_name"
+            value=$(hcp secrets get --application-name $APP_NAME --secret-name "$secret_name" --output json | jq -r '.data')
+            
+            # Parse key=value format and extract the value
+            env_value=$(echo "$value" | cut -d= -f2-)
+            
+            # Set as environment variable for subsequent steps
+            echo "$env_name=$env_value" >> $GITHUB_ENV
+            echo "Secret $secret_name fetched and set as $env_name"
+          }
+          
+          # Fetch required secrets
+          fetch_secret "dockerhub_username" "DOCKERHUB_USERNAME"
+          fetch_secret "dockerhub_token" "DOCKERHUB_TOKEN"
+          fetch_secret "db_username" "DB_USERNAME"
+          fetch_secret "db_password" "DB_PASSWORD"
+          fetch_secret "jwt_secret" "JWT_SECRET"
+          
+          # Log which secrets were successfully set (without showing values)
+          echo "Retrieved the following secrets (showing variable names only, not values):"
+          env | grep -E '^(DOCKERHUB_USERNAME|DOCKERHUB_TOKEN|DB_USERNAME|DB_PASSWORD|JWT_SECRET)=' | cut -d= -f1 | sort
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
