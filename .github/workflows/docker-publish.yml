@@ -9,6 +9,15 @@ on:
     branches: [main, master]
   workflow_dispatch:  # Allow manual triggering
 
+env:
+  # Default environment variables
+  DB_USERNAME: postgres
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
+  DB_DATABASE: stratosafe
+  JWT_SECRET: ${{ secrets.JWT_SECRET || 'github_default_jwt_secret' }}
+  # Determine the Docker tag based on context
+  DOCKER_TAG: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
@@ -17,29 +26,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Debug step - display username (without revealing it)
-      - name: Debug username format
+      # Debug step to verify secrets are available (masked in logs)
+      - name: Debug - Check if secrets are available
         run: |
-          echo "Username length: ${#DOCKER_USERNAME}"
-          echo "Username first character: ${DOCKER_USERNAME:0:1}"
-          echo "Username last character: ${DOCKER_USERNAME: -1}"
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          if [ -n "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
+            echo "DOCKERHUB_USERNAME is set"
+          else
+            echo "DOCKERHUB_USERNAME is NOT set"
+          fi
+          
+          if [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
+            echo "DOCKERHUB_TOKEN is set"
+          else
+            echo "DOCKERHUB_TOKEN is NOT set"
+          fi
 
       # Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Store credentials in a file for docker login
-      - name: Store Docker credentials in config.json
-        run: |
-          mkdir -p $HOME/.docker
-          echo '{"auths":{"https://index.docker.io/v1/":{"auth":"'$(echo -n ${{ secrets.DOCKERHUB_USERNAME }}:${{ secrets.DOCKERHUB_TOKEN }} | base64)'"}}}'> $HOME/.docker/config.json
-          cat $HOME/.docker/config.json | grep -v auth  # Show file structure without revealing auth
-          
-      # Try to run a simple Docker command to test auth
-      - name: Test Docker auth
-        run: docker info
+      # Login to Docker Hub with explicit parameters
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # Build and push backend image
       - name: Build and push backend
@@ -47,13 +59,15 @@ jobs:
         with:
           context: ./backend
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-backend:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-backend:${{ env.DOCKER_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            DB_USERNAME=postgres
-            DB_PASSWORD=${{ secrets.DB_PASSWORD || 'postgres' }}
-            JWT_SECRET=${{ secrets.JWT_SECRET || 'github_default_jwt_secret' }}
+            DB_USERNAME=${{ env.DB_USERNAME }}
+            DB_PASSWORD=${{ env.DB_PASSWORD }}
+            JWT_SECRET=${{ env.JWT_SECRET }}
 
       # Build and push frontend image
       - name: Build and push frontend
@@ -61,7 +75,9 @@ jobs:
         with:
           context: ./frontend
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-frontend:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-frontend:${{ env.DOCKER_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -89,7 +105,7 @@ jobs:
                 retries: 5
 
             backend:
-              image: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-backend:latest
+              image: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-backend:${{ env.DOCKER_TAG }}
               ports:
                 - "\${PORT:-3001}:\${PORT:-3001}"
               environment:
@@ -110,7 +126,7 @@ jobs:
               restart: unless-stopped
 
             frontend:
-              image: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-frontend:latest
+              image: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-frontend:${{ env.DOCKER_TAG }}
               ports:
                 - "\${FRONTEND_PORT:-3000}:3000"
               depends_on:
