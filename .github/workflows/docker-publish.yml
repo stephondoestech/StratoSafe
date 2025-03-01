@@ -3,17 +3,31 @@ name: Docker Hub Build and Publish
 on:
   push:
     branches: [main, master]
+    tags:
+      - 'v*.*.*'
   pull_request:
     branches: [main, master]
   workflow_dispatch:  # Allow manual triggering
 
+env:
+  # Default environment variables if not provided as GitHub secrets
+  DB_USERNAME: postgres
+  DB_PASSWORD: postgres
+  DB_DATABASE: stratosafe
+  JWT_SECRET: github_default_jwt_secret
+  # Determine the Docker tag based on context
+  DOCKER_TAG: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+
 jobs:
-  fetch-secrets-and-build:
+  build-and-publish:
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Obtain HCP OAuth Token
         id: hcp-auth
@@ -21,7 +35,7 @@ jobs:
           HCP_CLIENT_ID: ${{ secrets.HCP_CLIENT_ID }}
           HCP_CLIENT_SECRET: ${{ secrets.HCP_CLIENT_SECRET }}
         run: |
-          # Request OAuth token from HCP using the correct endpoint and format
+          # Request OAuth token from HCP
           HCP_API_TOKEN=$(curl --location "https://auth.idp.hashicorp.com/oauth2/token" \
             --header "Content-Type: application/x-www-form-urlencoded" \
             --data-urlencode "client_id=$HCP_CLIENT_ID" \
@@ -38,51 +52,152 @@ jobs:
           echo "HCP_API_TOKEN=$HCP_API_TOKEN" >> $GITHUB_ENV
           echo "Successfully obtained HCP OAuth token"
 
-      - name: Authenticate with HCP and get secrets
-        uses: hashicorp/vault-action@v2
-        with:
-          url: https://api.cloud.hashicorp.com/secrets/2023-11-28/organizations/$HCP_ORGANIZATION_ID/projects/$HCP_PROJECT_ID/apps/$APP_NAME/secrets
-          method: token
-          token: ${{ env.HCP_API_TOKEN }}
-          secrets: |
-            apps/data/stratosafe/dockerhub_username DOCKERHUB_USERNAME | DOCKERHUB_USERNAME ;
-            apps/data/stratosafe/dockerhub_token DOCKERHUB_TOKEN | DOCKERHUB_TOKEN ;
-            apps/data/stratosafe/db_username DB_USERNAME | DB_USERNAME ;
-            apps/data/stratosafe/db_password DB_PASSWORD | DB_PASSWORD ;
-            apps/data/stratosafe/jwt_secret JWT_SECRET | JWT_SECRET
-
-      - name: Log which secrets were successfully retrieved
+      - name: Fetch Docker Hub credentials from HCP Vault
+        if: env.HCP_API_TOKEN != ''
+        env:
+          HCP_ORGANIZATION_ID: ${{ secrets.HCP_ORGANIZATION_ID }}
+          HCP_PROJECT_ID: ${{ secrets.HCP_PROJECT_ID }}
+          APP_NAME: stratosafe
         run: |
-          echo "Retrieved the following secrets (showing variable names only, not values):"
-          [[ -n "$DOCKERHUB_USERNAME" ]] && echo "- DOCKERHUB_USERNAME" || echo "! DOCKERHUB_USERNAME missing"
-          [[ -n "$DOCKERHUB_TOKEN" ]] && echo "- DOCKERHUB_TOKEN" || echo "! DOCKERHUB_TOKEN missing"
-          [[ -n "$DB_USERNAME" ]] && echo "- DB_USERNAME" || echo "! DB_USERNAME missing"
-          [[ -n "$DB_PASSWORD" ]] && echo "- DB_PASSWORD" || echo "! DB_PASSWORD missing"
-          [[ -n "$JWT_SECRET" ]] && echo "- JWT_SECRET" || echo "! JWT_SECRET missing"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+          # Function to fetch a secret from HCP Vault
+          fetch_secret() {
+            local secret_name=$1
+            local env_name=$2
+            
+            response=$(curl -s -X GET \
+              "https://api.cloud.hashicorp.com/secrets/2023-06-13/organizations/${HCP_ORGANIZATION_ID}/projects/${HCP_PROJECT_ID}/apps/${APP_NAME}/open/${secret_name}" \
+              -H "Authorization: Bearer ${HCP_API_TOKEN}" \
+              -H "Content-Type: application/json")
+            
+            value=$(echo "$response" | jq -r '.open_secrets_response.data // ""' | cut -d= -f2-)
+            
+            if [ -n "$value" ]; then
+              echo "$env_name=$value" >> $GITHUB_ENV
+              echo "Successfully retrieved $env_name"
+            else
+              echo "Failed to retrieve $env_name"
+            fi
+          }
+          
+          # Fetch Docker Hub credentials
+          fetch_secret "dockerhub_username" "DOCKERHUB_USERNAME"
+          fetch_secret "dockerhub_token" "DOCKERHUB_TOKEN"
+          
+          # Fetch application secrets if needed for build
+          fetch_secret "db_username" "DB_USERNAME"
+          fetch_secret "db_password" "DB_PASSWORD"
+          fetch_secret "jwt_secret" "JWT_SECRET"
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKERHUB_TOKEN }}
-          
+          username: ${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN || secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}/stratosafe
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+
+      # Build and push backend image
       - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
           context: ./backend
-          push: true
-          tags: ${{ env.DOCKERHUB_USERNAME }}/stratosafe-backend:latest,${{ env.DOCKERHUB_USERNAME }}/stratosafe-backend:${{ github.sha }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}/stratosafe-backend:latest,${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}/stratosafe-backend:${{ env.DOCKER_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           build-args: |
             DB_USERNAME=${{ env.DB_USERNAME }}
             DB_PASSWORD=${{ env.DB_PASSWORD }}
             JWT_SECRET=${{ env.JWT_SECRET }}
 
+      # Build and push frontend image
       - name: Build and push frontend
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
-          push: true
-          tags: ${{ env.DOCKERHUB_USERNAME }}/stratosafe-frontend:latest,${{ env.DOCKERHUB_USERNAME }}/stratosafe-frontend:${{ github.sha }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}/stratosafe-frontend:latest,${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}/stratosafe-frontend:${{ env.DOCKER_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Optionally build and push a full docker-compose stack image
+      - name: Create docker-compose.yml with versioned images
+        if: github.event_name != 'pull_request'
+        run: |
+          cat > docker-compose.production.yml << EOF
+          services:
+            postgres:
+              image: postgres:15
+              environment:
+                POSTGRES_USER: postgres
+                POSTGRES_PASSWORD: \${DB_PASSWORD:-postgres}
+                POSTGRES_DB: \${DB_DATABASE:-stratosafe}
+              volumes:
+                - pgdata:/var/lib/postgresql/data
+              networks:
+                - stratosafe-network
+              restart: unless-stopped
+              healthcheck:
+                test: ["CMD-SHELL", "pg_isready -U postgres -d \${DB_DATABASE:-stratosafe}"]
+                interval: 5s
+                timeout: 5s
+                retries: 5
+
+            backend:
+              image: ${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}/stratosafe-backend:${{ env.DOCKER_TAG }}
+              environment:
+                - PORT=\${PORT:-3001}
+                - JWT_SECRET=\${JWT_SECRET}
+                - DB_HOST=postgres
+                - DB_PORT=5432
+                - DB_USERNAME=postgres
+                - DB_PASSWORD=\${DB_PASSWORD}
+                - DB_DATABASE=\${DB_DATABASE}
+              depends_on:
+                postgres:
+                  condition: service_healthy
+              volumes:
+                - backend_uploads:/app/uploads
+              networks:
+                - stratosafe-network
+              restart: unless-stopped
+
+            frontend:
+              image: ${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}/stratosafe-frontend:${{ env.DOCKER_TAG }}
+              ports:
+                - "\${FRONTEND_PORT:-3000}:3000"
+              depends_on:
+                - backend
+              networks:
+                - stratosafe-network
+              restart: unless-stopped
+
+          networks:
+            stratosafe-network:
+              driver: bridge
+
+          volumes:
+            pgdata:
+            backend_uploads:
+          EOF
+          
+          echo "Created docker-compose.production.yml with versioned images"
+
+      - name: Upload docker-compose.production.yml as artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-compose-production
+          path: docker-compose.production.yml
+          retention-days: 7

@@ -2,34 +2,41 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME:-stratosafe_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-stratosafe_password}
+      POSTGRES_DB: ${DB_DATABASE:-stratosafe}
     ports:
-      - "${DB_PORT}:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+      - ./backend/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     networks:
       - stratosafe-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-stratosafe_user} -d ${DB_DATABASE:-stratosafe}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   backend:
-    build: ./backend
+    image: ${DOCKERHUB_USERNAME:-stephondoestech}/stratosafe-backend:${TAG:-latest}
+    build:
+      context: ./backend
+      args:
+        - DB_USERNAME=${DB_USERNAME:-stratosafe_user}
+        - DB_PASSWORD=${DB_PASSWORD:-stratosafe_password}
+        - JWT_SECRET=${JWT_SECRET:-supersecretkey123}
     ports:
-      - "${PORT}:${PORT}"
+      - "${PORT:-3001}:${PORT:-3001}"
     environment:
-      - PORT=${PORT}
-      - JWT_SECRET=${JWT_SECRET}
+      - PORT=${PORT:-3001}
+      - JWT_SECRET=${JWT_SECRET:-supersecretkey123}
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME:-stratosafe_user}
+      - DB_PASSWORD=${DB_PASSWORD:-stratosafe_password}
+      - DB_DATABASE=${DB_DATABASE:-stratosafe}
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,8 +44,16 @@ services:
       - backend_uploads:/app/uploads
     networks:
       - stratosafe-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-3001}/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
 
   frontend:
+    image: ${DOCKERHUB_USERNAME:-stephondoestech}/stratosafe-frontend:${TAG:-latest}
     build: ./frontend
     ports:
       - "3000:3000"
@@ -46,6 +61,7 @@ services:
       - backend
     networks:
       - stratosafe-network
+    restart: unless-stopped
 
 networks:
   stratosafe-network:

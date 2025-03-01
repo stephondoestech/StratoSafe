@@ -183,7 +183,7 @@ done
 echo ""
 echo "Step 5: Retrieving Secret Values"
 
-# Function to get a specific secret using two-step process
+# Function to get a specific secret using the correct JSON path
 get_secret_value() {
   local app_name=$1
   local secret_name=$2
@@ -211,7 +211,7 @@ get_secret_value() {
   
   echo "Secret metadata found. Retrieving secret value..."
   
-  # Second, use the open endpoint to get the actual secret value
+  # Get the secret using the open endpoint
   value_response=$(curl -s --location "https://api.cloud.hashicorp.com/secrets/2023-06-13/organizations/${HCP_ORGANIZATION_ID}/projects/${HCP_PROJECT_ID}/apps/${app_name}/open/${secret_name}" \
     --header "Authorization: Bearer ${HCP_API_TOKEN}")
   
@@ -222,23 +222,29 @@ get_secret_value() {
     return 1
   fi
   
-  # Extract and print the secret value
-  secret_value=$(echo "$value_response" | jq -r '.open_secrets_response.data // "null"')
+  # Extract the secret value using the CORRECT path (.secret.version.value)
+  secret_value=$(echo "$value_response" | jq -r '.secret.version.value // "null"')
   
   if [ "$secret_value" = "null" ]; then
     echo "WARNING: Secret value is null. You may not have permission to open this secret."
-  else
-    echo "Successfully retrieved secret value!"
-    echo "Value: $secret_value"
+    return 1
+  fi
+  
+  echo "Successfully retrieved secret value!"
+  echo "Value: $secret_value"
+  
+  # Parse the secret in key=value format
+  key=$(echo "$secret_value" | cut -d= -f1)
+  value=$(echo "$secret_value" | cut -d= -f2-)
+  
+  # If we got valid key=value, print it nicely
+  if [ ! -z "$key" ] && [ "$key" != "$secret_value" ]; then
+    echo "Parsed as: $key = $value"
     
-    # Parse the secret in key=value format
-    key=$(echo "$secret_value" | cut -d= -f1)
-    value=$(echo "$secret_value" | cut -d= -f2-)
-    
-    # If we got valid key=value, print it nicely
-    if [ ! -z "$key" ] && [ "$key" != "$secret_value" ]; then
-      echo "Parsed as: $key = $value"
-    fi
+    # Export the value as an environment variable
+    env_name=$(echo "$key" | tr '[:lower:]' '[:upper:]')
+    export "$env_name"="$value"
+    echo "Exported as environment variable: $env_name"
   fi
 }
 
@@ -252,12 +258,23 @@ done
 # ==========================
 
 echo ""
-echo "Step 6: Summary"
+echo "Step 6: Verifying Environment Variables"
+echo "====================================="
+echo "Environment variables set:"
+[[ -n "$DOCKERHUB_USERNAME" ]] && echo "- DOCKERHUB_USERNAME ✓" || echo "! DOCKERHUB_USERNAME missing"
+[[ -n "$DOCKERHUB_TOKEN" ]] && echo "- DOCKERHUB_TOKEN ✓" || echo "! DOCKERHUB_TOKEN missing"
+[[ -n "$DB_USERNAME" ]] && echo "- DB_USERNAME ✓" || echo "! DB_USERNAME missing"
+[[ -n "$DB_PASSWORD" ]] && echo "- DB_PASSWORD ✓" || echo "! DB_PASSWORD missing"
+[[ -n "$JWT_SECRET" ]] && echo "- JWT_SECRET ✓" || echo "! JWT_SECRET missing"
+
+echo ""
+echo "Step 7: Summary"
 echo "====================================="
 echo "HCP Vault Secrets testing completed!"
 echo ""
 echo "Next steps:"
-echo "1. Ensure all required secrets exist and have values"
-echo "2. Update your GitHub Actions workflow to use these secrets"
-echo "3. Run a test build with the GitHub Actions workflow"
+echo "1. You can now use these environment variables in your local development"
+echo "2. To simulate a GitHub Actions build, run:"
+echo "   docker build -t $DOCKERHUB_USERNAME/stratosafe-backend:local ./backend --build-arg DB_USERNAME=$DB_USERNAME --build-arg DB_PASSWORD=$DB_PASSWORD --build-arg JWT_SECRET=$JWT_SECRET"
+echo "   docker build -t $DOCKERHUB_USERNAME/stratosafe-frontend:local ./frontend"
 echo "====================================="
