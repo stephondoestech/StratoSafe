@@ -264,7 +264,7 @@ jobs:
                 retries: 5
 
             combined:
-              image: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-combined:${{ env.DOCKER_TAG }}
+              image: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe:${{ env.DOCKER_TAG }}
               ports:
                 - "\${FRONTEND_PORT:-3000}:3000"
                 - "\${PORT:-3001}:3001"
