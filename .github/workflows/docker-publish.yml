@@ -11,10 +11,10 @@ on:
 
 env:
   # Default environment variables if not provided as GitHub secrets
-  DB_USERNAME: postgres
-  DB_PASSWORD: postgres
-  DB_DATABASE: stratosafe
-  JWT_SECRET: github_default_jwt_secret
+  DB_USERNAME: ${{ secrets.DB_USERNAME || 'postgres' }}
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
+  DB_DATABASE: ${{ secrets.DB_DATABASE || 'stratosafe' }}
+  JWT_SECRET: ${{ secrets.JWT_SECRET || 'github_default_jwt_secret' }}
   # Determine the Docker tag based on context
   DOCKER_TAG: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
 
@@ -29,76 +29,17 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Obtain HCP OAuth Token
-        id: hcp-auth
-        env:
-          HCP_CLIENT_ID: ${{ secrets.HCP_CLIENT_ID }}
-          HCP_CLIENT_SECRET: ${{ secrets.HCP_CLIENT_SECRET }}
-        run: |
-          # Request OAuth token from HCP
-          HCP_API_TOKEN=$(curl --location "https://auth.idp.hashicorp.com/oauth2/token" \
-            --header "Content-Type: application/x-www-form-urlencoded" \
-            --data-urlencode "client_id=$HCP_CLIENT_ID" \
-            --data-urlencode "client_secret=$HCP_CLIENT_SECRET" \
-            --data-urlencode "grant_type=client_credentials" \
-            --data-urlencode "audience=https://api.hashicorp.cloud" | jq -r .access_token)
-          
-          if [ -z "$HCP_API_TOKEN" ] || [ "$HCP_API_TOKEN" = "null" ]; then
-            echo "Failed to obtain OAuth token."
-            exit 1
-          fi
-          
-          # Save token as environment variable
-          echo "HCP_API_TOKEN=$HCP_API_TOKEN" >> $GITHUB_ENV
-          echo "Successfully obtained HCP OAuth token"
-
-      - name: Fetch Docker Hub credentials from HCP Vault
-        if: env.HCP_API_TOKEN != ''
-        env:
-          HCP_ORGANIZATION_ID: ${{ secrets.HCP_ORGANIZATION_ID }}
-          HCP_PROJECT_ID: ${{ secrets.HCP_PROJECT_ID }}
-          APP_NAME: stratosafe
-        run: |
-          # Function to fetch a secret from HCP Vault
-          fetch_secret() {
-            local secret_name=$1
-            local env_name=$2
-            
-            response=$(curl -s -X GET \
-              "https://api.cloud.hashicorp.com/secrets/2023-06-13/organizations/${HCP_ORGANIZATION_ID}/projects/${HCP_PROJECT_ID}/apps/${APP_NAME}/open/${secret_name}" \
-              -H "Authorization: Bearer ${HCP_API_TOKEN}" \
-              -H "Content-Type: application/json")
-            
-            value=$(echo "$response" | jq -r '.open_secrets_response.data // ""' | cut -d= -f2-)
-            
-            if [ -n "$value" ]; then
-              echo "$env_name=$value" >> $GITHUB_ENV
-              echo "Successfully retrieved $env_name"
-            else
-              echo "Failed to retrieve $env_name"
-            fi
-          }
-          
-          # Fetch Docker Hub credentials
-          fetch_secret "dockerhub_username" "DOCKERHUB_USERNAME"
-          fetch_secret "dockerhub_token" "DOCKERHUB_TOKEN"
-          
-          # Fetch application secrets if needed for build
-          fetch_secret "db_username" "DB_USERNAME"
-          fetch_secret "db_password" "DB_PASSWORD"
-          fetch_secret "jwt_secret" "JWT_SECRET"
-
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKERHUB_TOKEN || secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}/stratosafe
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -113,7 +54,7 @@ jobs:
         with:
           context: ./backend
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}/stratosafe-backend:latest,${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}/stratosafe-backend:${{ env.DOCKER_TAG }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-backend:latest,${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-backend:${{ env.DOCKER_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -127,11 +68,11 @@ jobs:
         with:
           context: ./frontend
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}/stratosafe-frontend:latest,${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}/stratosafe-frontend:${{ env.DOCKER_TAG }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-frontend:latest,${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-frontend:${{ env.DOCKER_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Optionally build and push a full docker-compose stack image
+      # Create production docker-compose file
       - name: Create docker-compose.yml with versioned images
         if: github.event_name != 'pull_request'
         run: |
@@ -155,7 +96,7 @@ jobs:
                 retries: 5
 
             backend:
-              image: ${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}/stratosafe-backend:${{ env.DOCKER_TAG }}
+              image: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-backend:${{ env.DOCKER_TAG }}
               environment:
                 - PORT=\${PORT:-3001}
                 - JWT_SECRET=\${JWT_SECRET}
@@ -174,7 +115,7 @@ jobs:
               restart: unless-stopped
 
             frontend:
-              image: ${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}/stratosafe-frontend:${{ env.DOCKER_TAG }}
+              image: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-frontend:${{ env.DOCKER_TAG }}
               ports:
                 - "\${FRONTEND_PORT:-3000}:3000"
               depends_on:
