@@ -119,10 +119,13 @@ jobs:
           # Create app directory
           WORKDIR /app
 
-          # Copy package files for both services
-          COPY backend/package.json backend/yarn.lock ./backend/
-          COPY frontend/package.json frontend/yarn.lock ./frontend/
-          COPY package.json yarn.lock ./
+          # First, copy all the package.json files (without requiring yarn.lock that might not exist)
+          COPY backend/package.json ./backend/
+          COPY frontend/package.json ./frontend/
+          COPY package.json ./
+
+          # Copy yarn.lock if it exists (only try at root level)
+          COPY yarn.lock* ./
 
           # Install dependencies
           RUN yarn install
@@ -264,7 +267,7 @@ jobs:
                 retries: 5
 
             combined:
-              image: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe:${{ env.DOCKER_TAG }}
+              image: ${{ secrets.DOCKERHUB_USERNAME }}/stratosafe-combined:${{ env.DOCKER_TAG }}
               ports:
                 - "\${FRONTEND_PORT:-3000}:3000"
                 - "\${PORT:-3001}:3001"
