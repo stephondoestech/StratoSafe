@@ -27,7 +27,7 @@ router.get("/profile", authMiddleware as any, getUserProfile as any);
 // MFA routes
 router.post("/verify-mfa", limiter, verifyMfaToken as any);
 router.get("/mfa/setup", limiter, authMiddleware as any, generateMfaSetup as any);
-router.post("/mfa/enable", authMiddleware as any, verifyAndEnableMfa as any);
+router.post("/mfa/enable", limiter, authMiddleware as any, verifyAndEnableMfa as any);
 router.post("/mfa/disable", authMiddleware as any, disableMfa as any);
 router.get("/mfa/status", limiter, authMiddleware as any, getMfaStatus as any);
 router.post("/mfa/backup-codes", limiter, authMiddleware as any, generateBackupCodes as any);
