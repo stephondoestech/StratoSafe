@@ -29,7 +29,7 @@ router.post("/verify-mfa", limiter, verifyMfaToken as any);
 router.get("/mfa/setup", authMiddleware as any, generateMfaSetup as any);
 router.post("/mfa/enable", authMiddleware as any, verifyAndEnableMfa as any);
 router.post("/mfa/disable", authMiddleware as any, disableMfa as any);
-router.get("/mfa/status", authMiddleware as any, getMfaStatus as any);
+router.get("/mfa/status", limiter, authMiddleware as any, getMfaStatus as any);
 router.post("/mfa/backup-codes", limiter, authMiddleware as any, generateBackupCodes as any);
 
 export default router;
