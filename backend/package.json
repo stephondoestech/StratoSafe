@@ -20,7 +20,8 @@
     "pg": "^8.11.2",
     "qrcode": "^1.5.3",
     "reflect-metadata": "^0.1.13",
-    "typeorm": "^0.3.17"
+    "typeorm": "^0.3.17",
+    "express-rate-limit": "^7.5.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",
