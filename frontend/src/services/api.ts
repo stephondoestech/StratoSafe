@@ -35,6 +35,36 @@ export const authService = {
     const response = await api.get('/users/profile');
     return response.data;
   },
+  // MFA Verification after login
+  verifyMfa: async (email: string, token: string, isBackupCode: boolean = false) => {
+    const response = await api.post('/users/verify-mfa', { email, token, isBackupCode });
+    return response.data;
+  },
+  // Get MFA setup data (secret and QR code)
+  setupMfa: async () => {
+    const response = await api.get('/users/mfa/setup');
+    return response.data;
+  },
+  // Enable MFA after setup
+  enableMfa: async (token: string) => {
+    const response = await api.post('/users/mfa/enable', { token });
+    return response.data;
+  },
+  // Disable MFA
+  disableMfa: async () => {
+    const response = await api.post('/users/mfa/disable');
+    return response.data;
+  },
+  // Get MFA status
+  getMfaStatus: async () => {
+    const response = await api.get('/users/mfa/status');
+    return response.data;
+  },
+  // Generate backup codes
+  generateBackupCodes: async () => {
+    const response = await api.post('/users/mfa/backup-codes');
+    return response.data;
+  }
 };
 
 // File services

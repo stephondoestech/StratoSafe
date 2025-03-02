@@ -197,34 +197,95 @@ All data is persisted in Docker volumes, so you won't lose information when cont
 
 ```
 StratoSafe/
-├── backend/                # Backend (Node.js, Express, TypeORM)
+├── .github/
+│   ├── CODEOWNERS                        # GitHub code ownership configuration
+│   └── workflows/
+│       ├── build-test.yml                # Original build and test workflow
+│       ├── build-test-mfa.yml            # New MFA-aware build and test workflow
+│       ├── docker-publish.yml            # Docker build and publish workflow
+│       └── lint.yml                      # Linting workflow
+│
+├── backend/
 │   ├── src/
-│   │   ├── models/         # TypeORM entities (User, File)
-│   │   ├── controllers/    # API controllers
-│   │   ├── routes/         # API routes
-│   │   ├── middlewares/    # Express middlewares
-│   │   ├── data-source.ts  # TypeORM configuration
-│   │   └── server.ts       # Express server entry point
-│   ├── package.json        # Backend dependencies & scripts
-│   ├── tsconfig.json       # TypeScript configuration
-│   └── Dockerfile          # Docker configuration for backend
-├── frontend/               # Frontend (React, Material UI)
-│   ├── public/             # Static files
+│   │   ├── controllers/
+│   │   │   ├── fileController.ts         # File upload and management
+│   │   │   ├── mfaController.ts          # New MFA operations controller
+│   │   │   └── userController.ts         # User auth (updated for MFA)
+│   │   │
+│   │   ├── middlewares/
+│   │   │   └── authMiddleware.ts         # JWT authentication middleware
+│   │   │
+│   │   ├── models/
+│   │   │   ├── File.ts                   # File entity model
+│   │   │   └── User.ts                   # User entity model (updated for MFA)
+│   │   │
+│   │   ├── routes/
+│   │   │   ├── fileRoutes.ts             # File API routes
+│   │   │   └── userRoutes.ts             # User API routes (updated for MFA)
+│   │   │
+│   │   ├── services/
+│   │   │   └── MfaService.ts             # New TOTP & backup code service
+│   │   │
+│   │   ├── types/
+│   │   │   └── express-multer.d.ts       # TypeScript definitions for multer
+│   │   │
+│   │   ├── data-source.ts                # TypeORM database connection
+│   │   └── server.ts                     # Express server entry point
+│   │
+│   ├── Dockerfile                        # Updated for MFA dependencies
+│   ├── init-db.sh                        # Database initialization script
+│   ├── package.json                      # Updated with MFA dependencies
+│   ├── tsconfig.build.json               # TypeScript build config
+│   └── tsconfig.json                     # TypeScript config
+│
+├── frontend/
+│   ├── public/
+│   │   └── index.html                    # HTML entry point
+│   │
 │   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── pages/          # Page components
-│   │   ├── services/       # API services
-│   │   ├── context/        # React context
-│   │   ├── utils/          # Utility functions
-│   │   ├── App.tsx         # Main React component
-│   │   └── index.tsx       # React entry point
-│   ├── package.json        # Frontend dependencies & scripts
-│   ├── tsconfig.json       # TypeScript configuration
-│   └── Dockerfile          # Docker configuration for frontend
-├── docker-compose.yml      # Docker Compose configuration
-├── Makefile                # Build and run commands
-├── .env                    # Environment variables
-└── package.json            # Root package.json for monorepo
+│   │   ├── components/
+│   │   │   ├── AccountSecurity.tsx       # New security settings component
+│   │   │   ├── BackupCodes.tsx           # New backup codes component
+│   │   │   ├── FileList.tsx              # File browser component
+│   │   │   ├── FileUpload.tsx            # File upload component
+│   │   │   ├── Layout.tsx                # Updated app layout with security link
+│   │   │   ├── MfaSetup.tsx              # New MFA setup component
+│   │   │   ├── MfaVerification.tsx       # New MFA verification component
+│   │   │   └── ProtectedRoute.tsx        # Auth protection wrapper
+│   │   │
+│   │   ├── context/
+│   │   │   └── AuthContext.tsx           # Updated auth context with MFA
+│   │   │
+│   │   ├── pages/
+│   │   │   ├── Dashboard.tsx             # Main app dashboard
+│   │   │   ├── Login.tsx                 # Updated login with MFA flow
+│   │   │   └── Register.tsx              # User registration
+│   │   │
+│   │   ├── services/
+│   │   │   └── api.ts                    # Updated API service with MFA endpoints
+│   │   │
+│   │   ├── utils/
+│   │   │   └── theme.ts                  # Material UI theme config
+│   │   │
+│   │   ├── App.tsx                       # Updated main app component with MFA routes
+│   │   ├── index.css                     # Global styles
+│   │   └── index.tsx                     # React entry point
+│   │
+│   ├── package.json                      # Frontend dependencies
+│   └── tsconfig.json                     # TypeScript config
+│
+├── tests/
+│   ├── simulate-github-action.sh         # GitHub Actions local simulation
+│   ├── test-hcp-all.sh                   # HCP API tests
+│   ├── test-hcp-auth.sh                  # HCP Auth tests
+│   ├── test-hcp-secrets.sh               # HCP Secrets tests
+│   └── test-hcp-secrets-alt.sh           # Alternative HCP Secrets tests
+│
+├── docker-compose.yml                    # Docker Compose configuration
+├── Dockerfile                            # Combined service Dockerfile
+├── Makefile                              # Project build commands
+├── README.md                             # Project documentation
+└── package.json                          # Root package.json for the monorepo
 ```
 
 ## Contributing

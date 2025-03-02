@@ -59,7 +59,18 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Generate JWT token
+    // Check if MFA is enabled
+    if (user.mfaEnabled) {
+      // Return a partial authentication response indicating MFA is required
+      res.json({
+        requiresMfa: true,
+        email: user.email,
+        message: "MFA verification required"
+      });
+      return;
+    }
+
+    // If MFA is not enabled, generate JWT token and proceed with normal login
     const token = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET || "supersecretkey123",
@@ -67,9 +78,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     );
 
     // Return user info and token
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _, mfaSecret: __, mfaBackupCodes: ___, ...userWithoutSensitiveInfo } = user;
     res.json({
-      user: userWithoutPassword,
+      user: userWithoutSensitiveInfo,
       token
     });
   } catch (error) {
@@ -93,8 +104,9 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
       return;
     }
     
-    const { password: _, ...userWithoutPassword } = user;
-    res.json(userWithoutPassword);
+    // Return user without sensitive information
+    const { password: _, mfaSecret: __, mfaBackupCodes: ___, ...userWithoutSensitiveInfo } = user;
+    res.json(userWithoutSensitiveInfo);
   } catch (error) {
     console.error("Error getting user profile:", error);
     res.status(500).json({ message: "Internal server error" });
