@@ -5,6 +5,7 @@ import { AppDataSource } from "./data-source";
 import userRoutes from "./routes/userRoutes";
 import fileRoutes from "./routes/fileRoutes";
 import * as path from "path";
+import rateLimit from "express-rate-limit";
 
 // Load environment variables
 dotenv.config();
@@ -13,9 +14,16 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Rate limiter middleware
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // max 100 requests per windowMs
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(limiter);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
