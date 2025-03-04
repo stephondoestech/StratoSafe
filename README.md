@@ -289,13 +289,29 @@ StratoSafe/
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please follow these steps to contribute:
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. **Open an Issue First**: Before starting work, please open a GitHub issue describing the change you wish to make. This allows for discussion and ensures your time is well spent.
+2. **Request Assignment**: Comment on the issue requesting to be assigned to it. This helps prevent duplicate work.
+3. **Follow Branch Naming Convention**: All branches should follow our naming convention:
+   ```
+   <prefix>/<work-item-identifier>-<short-description>
+   ```
+   
+   Where:
+   - `<prefix>` is one of: `feature`, `bugfix`, `hotfix`, `task`, or `patch`
+   - `<work-item-identifier>` is the issue number (e.g., GH-123)
+   - `<short-description>` is a brief, hyphenated description
+
+   Example: `feature/GH-45-user-authentication`
+
+4. **Fork the repository**
+5. **Create your branch** following the naming convention
+6. **Commit your changes** (`git commit -m 'Add some amazing feature'`)
+7. **Push to the branch** (`git push origin feature/GH-45-user-authentication`)
+8. **Open a Pull Request**
+
+**Note**: Pull requests with passing tests are reviewed on a weekly basis. Including tests with your contribution will speed up the review process.
 
 ## License
 
