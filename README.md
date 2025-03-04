@@ -45,9 +45,8 @@ Whether you're looking for personal cloud storage or a team collaboration tool, 
 
 ## Demo
 
-![StratoSafe Demo](https://via.placeholder.com/800x450.png?text=StratoSafe+Demo)
+![StratoSafe Login Demo](./demo_login.png)
 
-*[Note: Replace with actual screenshots of your application once available]*
 
 ## Quick Start
 
