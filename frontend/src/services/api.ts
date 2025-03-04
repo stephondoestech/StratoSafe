@@ -64,7 +64,11 @@ export const authService = {
   generateBackupCodes: async () => {
     const response = await api.post('/users/mfa/backup-codes');
     return response.data;
-  }
+  },
+  updateUserProfile: async (userData: { firstName?: string; lastName?: string; email?: string }) => {
+    const response = await api.put('/users/profile', userData);
+    return response.data;
+  },
 };
 
 // File services

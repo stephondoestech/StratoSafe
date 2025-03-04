@@ -10,6 +10,7 @@ import MfaVerification from './components/MfaVerification';
 import MfaSetup from './components/MfaSetup';
 import BackupCodes from './components/BackupCodes';
 import AccountSecurity from './components/AccountSecurity';
+import UserProfile from './components/UserProfile';
 
 function App() {
   const { isAuthenticated, requiresMfa } = useAuth();
@@ -36,6 +37,14 @@ function App() {
               <Dashboard />
             </ProtectedRoute>
           } 
+        />
+        <Route 
+          path="account/profile" 
+          element={
+            <ProtectedRoute>
+              <UserProfile />
+            </ProtectedRoute>
+          }
         />
         
         {/* Account & MFA Settings Routes */}

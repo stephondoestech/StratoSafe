@@ -1,6 +1,5 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { register, login, getUserProfile } from "../controllers/userController";
 import { 
   generateMfaSetup, 
   verifyAndEnableMfa, 
@@ -10,6 +9,12 @@ import {
   verifyMfaToken
 } from "../controllers/mfaController";
 import { authMiddleware } from "../middlewares/authMiddleware";
+import { 
+  register, 
+  login, 
+  getUserProfile, 
+  updateUserProfile 
+} from "../controllers/userController";
 
 const router = Router();
 
@@ -23,6 +28,7 @@ const limiter = rateLimit({
 router.post("/register", register as any);
 router.post("/login", login as any);
 router.get("/profile", authMiddleware as any, getUserProfile as any);
+router.put("/profile", authMiddleware as any, updateUserProfile as any);
 
 // MFA routes
 router.post("/verify-mfa", limiter, verifyMfaToken as any);
