@@ -19,8 +19,12 @@ RUN mkdir -p uploads
 # Build the application with less strict TypeScript config
 RUN yarn tsc -p tsconfig.build.json
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -q --spider http://localhost:${PORT:-3001}/health || exit 1
+
 # Expose the port
-EXPOSE ${PORT}
+EXPOSE ${PORT:-3001}
 
 # Start the application
 CMD ["yarn", "start"]

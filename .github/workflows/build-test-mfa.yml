@@ -1,0 +1,71 @@
+name: Build and Test with MFA
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      CI: false  # Prevents React from treating warnings as errors
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: stratosafe_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Check for MFA dependencies
+        run: |
+          echo "Checking for required MFA dependencies..."
+          if grep -q '"otplib"' backend/package.json && grep -q '"qrcode"' backend/package.json; then
+            echo "✅ MFA dependencies found in backend/package.json"
+          else
+            echo "❌ Missing MFA dependencies in backend/package.json"
+            exit 1
+          fi
+
+      - name: TypeScript Check
+        run: |
+          yarn workspace stratosafe-backend tsc --noEmit
+          yarn workspace stratosafe-frontend tsc --noEmit
+
+      - name: Build applications
+        run: yarn build
+
+      - name: Start services for testing
+        run: |
+          # Start backend and frontend in background
+          yarn workspace stratosafe-backend start &
+          sleep 10
+          
+          # Check if backend is running
+          curl -f http://localhost:3001/health || (echo "Backend health check failed" && exit 1)
+          
+          echo "Services started successfully"
