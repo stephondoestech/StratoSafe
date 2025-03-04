@@ -54,7 +54,7 @@ The fastest way to get StratoSafe running is with Docker:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/stratosafe.git
+git clone https://github.com/stephondoestech/stratosafe.git
 cd stratosafe
 
 # Create environment file
@@ -87,7 +87,7 @@ Then open http://localhost:3000 in your browser.
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/stratosafe.git
+   git clone https://github.com/stephondoestech/stratosafe.git
    cd stratosafe
    ```
 
