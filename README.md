@@ -46,7 +46,21 @@ Whether you're looking for personal cloud storage or a team collaboration tool, 
 
 ## Demo
 
-![StratoSafe Login Demo](./frontend/assets/demo_login.png)
+Login Page:
+
+![StratoSafe Login Page](./frontend/assets/demo_login.png)
+
+File Upload Page:
+
+![StratoSafe File Edit](./frontend/assets/demo_file_upload.png)
+
+Profile Edit Page:
+
+![StratoSafe Profile Edit](./frontend/assets/demo_edit_profile.png)
+
+MFA Regisration Page:
+
+![StratoSafe MFA Page](./frontend/assets/demo_mfa.png)
 
 ## Quick Start
 

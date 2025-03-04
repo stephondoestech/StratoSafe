@@ -19,6 +19,7 @@ import CloudIcon from '@mui/icons-material/Cloud';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SecurityIcon from '@mui/icons-material/Security';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import PersonIcon from '@mui/icons-material/Person';
 
 const Layout: React.FC = () => {
   const { isAuthenticated, logout, user } = useAuth();
@@ -90,6 +91,10 @@ const Layout: React.FC = () => {
                     {user?.email}
                   </Typography>
                 </Box>
+                <MenuItem onClick={() => { handleClose(); navigate('/account/profile'); }}>
+                  <PersonIcon sx={{ mr: 1, fontSize: 20 }} />
+                  My Profile
+                </MenuItem>
                 <Divider />
                 <MenuItem onClick={handleSecurity}>
                   <SecurityIcon sx={{ mr: 1, fontSize: 20 }} />
