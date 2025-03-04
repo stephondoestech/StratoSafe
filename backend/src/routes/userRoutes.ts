@@ -13,7 +13,8 @@ import {
   register, 
   login, 
   getUserProfile, 
-  updateUserProfile 
+  updateUserProfile,
+  changePassword
 } from "../controllers/userController";
 
 const router = Router();
@@ -24,11 +25,21 @@ const limiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
 });
 
+// Stricter rate limiter for password change and sensitive operations
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 requests per windowMs
+  message: "Too many authentication attempts, please try again later."
+});
+
 // Auth routes
 router.post("/register", register as any);
 router.post("/login", login as any);
 router.get("/profile", authMiddleware as any, getUserProfile as any);
 router.put("/profile", authMiddleware as any, updateUserProfile as any);
+
+// New password change route with stricter rate limiting
+router.post("/change-password", authLimiter, authMiddleware as any, changePassword as any);
 
 // MFA routes
 router.post("/verify-mfa", limiter, verifyMfaToken as any);

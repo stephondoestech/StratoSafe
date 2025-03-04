@@ -155,3 +155,51 @@ export const updateUserProfile = async (req: Request, res: Response): Promise<vo
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// New change password functionality
+export const changePassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const { currentPassword, newPassword } = req.body;
+
+    // Validate request
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ message: "Current password and new password are required" });
+      return;
+    }
+
+    // Find the user
+    const user = await userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    // Verify current password
+    const isPasswordValid = await user.comparePassword(currentPassword);
+    if (!isPasswordValid) {
+      res.status(401).json({ message: "Current password is incorrect" });
+      return;
+    }
+
+    // Check if new password is same as current
+    const isSamePassword = await user.comparePassword(newPassword);
+    if (isSamePassword) {
+      res.status(400).json({ message: "New password must be different from current password" });
+      return;
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.hashPassword();
+    await userRepository.save(user);
+
+    res.json({ 
+      success: true, 
+      message: "Password changed successfully" 
+    });
+  } catch (error) {
+    console.error("Error changing password:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

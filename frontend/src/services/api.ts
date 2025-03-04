@@ -69,6 +69,11 @@ export const authService = {
     const response = await api.put('/users/profile', userData);
     return response.data;
   },
+  // New password change endpoint
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const response = await api.post('/users/change-password', { currentPassword, newPassword });
+    return response.data;
+  },
 };
 
 // File services

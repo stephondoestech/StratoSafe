@@ -36,6 +36,7 @@ interface AuthContextType {
   getMfaStatus: () => Promise<{ mfaEnabled: boolean; hasBackupCodes: boolean }>;
   clearMfaState: () => void;
   updateProfile: (userData: { firstName?: string; lastName?: string; email?: string }) => Promise<User>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,11 +59,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [requiresMfa, setRequiresMfa] = useState(false);
   const [pendingMfaEmail, setPendingMfaEmail] = useState<string | null>(null);
+  
   // User Profile Update
   const updateProfile = async (userData: { firstName?: string; lastName?: string; email?: string }) => {
     const updatedUser = await authService.updateUserProfile(userData);
     setUser(updatedUser);
     return updatedUser;
+  };
+
+  // Password Change
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    await authService.changePassword(currentPassword, newPassword);
   };
 
   useEffect(() => {
@@ -179,7 +186,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     generateBackupCodes,
     getMfaStatus,
     clearMfaState,
-    updateProfile
+    updateProfile,
+    changePassword
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
