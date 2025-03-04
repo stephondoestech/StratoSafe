@@ -1,4 +1,5 @@
 # StratoSafe
+<!-- markdownlint-disable MD033 -->
 
 <p align="center">
   <img src="https://via.placeholder.com/200x200.png?text=StratoSafe" alt="StratoSafe Logo" width="200" height="200">
@@ -45,8 +46,7 @@ Whether you're looking for personal cloud storage or a team collaboration tool, 
 
 ## Demo
 
-![StratoSafe Login Demo](./demo_login.png)
-
+![StratoSafe Login Demo](./frontend/assets/demo_login.png)
 
 ## Quick Start
 
