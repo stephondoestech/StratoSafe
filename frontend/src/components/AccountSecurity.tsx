@@ -3,8 +3,6 @@ import {
   Box,
   Typography,
   Paper,
-  Switch,
-  FormControlLabel,
   Button,
   Divider,
   Alert,
@@ -20,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import SecurityIcon from '@mui/icons-material/Security';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import { useNavigate } from 'react-router-dom';
+import PasswordChange from './PasswordChange';
 
 const AccountSecurity: React.FC = () => {
   const [mfaStatus, setMfaStatus] = useState<{ mfaEnabled: boolean; hasBackupCodes: boolean } | null>(null);
@@ -88,6 +87,10 @@ const AccountSecurity: React.FC = () => {
         </Alert>
       )}
 
+      {/* Password Change Section */}
+      <PasswordChange />
+
+      {/* MFA Section */}
       <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <SecurityIcon sx={{ mr: 1 }} />
