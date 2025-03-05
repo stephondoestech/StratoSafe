@@ -58,9 +58,15 @@ Profile Edit Page:
 
 ![StratoSafe Profile Edit](./frontend/assets/demo_edit_profile.png)
 
+### Security Settings Pages
+
 MFA Regisration Page:
 
 ![StratoSafe MFA Page](./frontend/assets/demo_mfa.png)
+
+Change Password Page: 
+
+![StratoSafe Change Password Page](./frontend/assets/demo_change_password.png)
 
 ## Quick Start
 
