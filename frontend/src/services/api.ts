@@ -65,8 +65,14 @@ export const authService = {
     const response = await api.post('/users/mfa/backup-codes');
     return response.data;
   },
-  updateUserProfile: async (userData: { firstName?: string; lastName?: string; email?: string }) => {
+  // Update user profile information (including theme preference)
+  updateUserProfile: async (userData: { firstName?: string; lastName?: string; email?: string; themePreference?: string }) => {
     const response = await api.put('/users/profile', userData);
+    return response.data;
+  },
+  // Update only theme preference
+  updateThemePreference: async (themePreference: string) => {
+    const response = await api.put('/users/theme-preference', { themePreference });
     return response.data;
   },
   // New password change endpoint

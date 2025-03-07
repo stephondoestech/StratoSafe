@@ -25,6 +25,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     user.password = password;
     user.firstName = firstName;
     user.lastName = lastName;
+    user.themePreference = 'light'; // Default to light theme
 
     // Hash password before saving
     await user.hashPassword();
@@ -116,7 +117,7 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
 export const updateUserProfile = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
-    const { firstName, lastName, email } = req.body;
+    const { firstName, lastName, email, themePreference } = req.body;
 
     // Find the user
     const user = await userRepository.findOne({ where: { id: userId } });
@@ -144,6 +145,11 @@ export const updateUserProfile = async (req: Request, res: Response): Promise<vo
       user.lastName = lastName;
     }
 
+    // Update theme preference if provided
+    if (themePreference && (themePreference === 'light' || themePreference === 'dark')) {
+      user.themePreference = themePreference;
+    }
+
     // Save the updated user
     await userRepository.save(user);
 
@@ -152,6 +158,42 @@ export const updateUserProfile = async (req: Request, res: Response): Promise<vo
     res.json(userWithoutSensitiveInfo);
   } catch (error) {
     console.error("Error updating user profile:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Update only the theme preference
+export const updateThemePreference = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const { themePreference } = req.body;
+
+    // Validate the theme preference
+    if (!themePreference || (themePreference !== 'light' && themePreference !== 'dark')) {
+      res.status(400).json({ message: "Invalid theme preference. Must be 'light' or 'dark'" });
+      return;
+    }
+
+    // Find the user
+    const user = await userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    // Update theme preference
+    user.themePreference = themePreference;
+
+    // Save the updated user
+    await userRepository.save(user);
+
+    res.json({ 
+      success: true, 
+      message: "Theme preference updated successfully",
+      themePreference: user.themePreference
+    });
+  } catch (error) {
+    console.error("Error updating theme preference:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

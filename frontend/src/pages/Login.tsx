@@ -8,9 +8,11 @@ import {
   Link,
   Alert,
   CircularProgress,
+  useTheme,
 } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -19,6 +21,7 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { login, requiresMfa } = useAuth();
   const navigate = useNavigate();
+  const theme = useTheme();
 
   // Redirect to MFA verification if required
   useEffect(() => {
@@ -54,9 +57,22 @@ const Login: React.FC = () => {
       }}
     >
       <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
-        <Typography component="h1" variant="h5" align="center" gutterBottom>
-          Login to StratoSafe
-        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+          <Box 
+            sx={{ 
+              bgcolor: 'primary.main', 
+              color: 'primary.contrastText',
+              borderRadius: '50%',
+              p: 1,
+              mb: 1
+            }}
+          >
+            <LockOutlinedIcon />
+          </Box>
+          <Typography component="h1" variant="h5" align="center">
+            Login to StratoSafe
+          </Typography>
+        </Box>
 
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>

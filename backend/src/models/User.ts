@@ -38,6 +38,10 @@ export class User {
   @Column({ nullable: true })
   mfaBackupCodes?: string;
 
+  // Theme preference
+  @Column({ default: 'light' })
+  themePreference!: string;
+
   async hashPassword() {
     this.password = await bcrypt.hash(this.password, 10);
   }

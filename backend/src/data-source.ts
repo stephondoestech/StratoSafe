@@ -1,10 +1,7 @@
-import "reflect-metadata";
+// In backend/src/data-source.ts
 import { DataSource } from "typeorm";
 import { User } from "./models/User";
 import { File } from "./models/File";
-import * as dotenv from "dotenv";
-
-dotenv.config();
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -19,6 +16,4 @@ export const AppDataSource = new DataSource({
   migrations: [],
   subscribers: [],
   ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
-  connectTimeoutMS: 20000, // Increased timeout
-  maxQueryExecutionTime: 10000, // Log slow queries
 });

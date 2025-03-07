@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   TextField,
@@ -10,12 +10,18 @@ import {
   Grid,
   Avatar,
   Divider,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
+import { useThemeMode } from '../context/ThemeContext';
 import PersonIcon from '@mui/icons-material/Person';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
 
 const UserProfile: React.FC = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, updateThemePreference } = useAuth();
+  const { mode } = useThemeMode();
   
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
@@ -27,6 +33,18 @@ const UserProfile: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [themeLoading, setThemeLoading] = useState(false);
+
+  // Update form data when user changes
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+      });
+    }
+  }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -84,6 +102,19 @@ const UserProfile: React.FC = () => {
     setEditMode(false);
     setError(null);
     setSuccess(null);
+  };
+
+  const handleThemeChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setThemeLoading(true);
+      setError(null);
+      const newTheme = event.target.checked ? 'dark' : 'light';
+      await updateThemePreference(newTheme);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to update theme preference. Please try again.');
+    } finally {
+      setThemeLoading(false);
+    }
   };
 
   // Function to get the user's initials for the avatar
@@ -207,6 +238,51 @@ const UserProfile: React.FC = () => {
             )}
           </Box>
         </Box>
+      </Paper>
+
+      {/* Dark Mode Toggle Section */}
+      <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          {mode === 'dark' ? <DarkModeIcon sx={{ mr: 1 }} /> : <LightModeIcon sx={{ mr: 1 }} />}
+          <Typography variant="h5" component="h2">
+            Appearance
+          </Typography>
+        </Box>
+
+        <Typography variant="body1" paragraph>
+          Choose between light and dark mode for the application.
+        </Typography>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 2 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={mode === 'dark'}
+                onChange={handleThemeChange}
+                color="primary"
+                disabled={themeLoading}
+              />
+            }
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {themeLoading ? (
+                  <CircularProgress size={20} sx={{ mr: 1 }} />
+                ) : mode === 'dark' ? (
+                  <DarkModeIcon sx={{ mr: 1 }} />
+                ) : (
+                  <LightModeIcon sx={{ mr: 1 }} />
+                )}
+                <Typography>
+                  {mode === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                </Typography>
+              </Box>
+            }
+          />
+        </Box>
+
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+          Dark mode reduces eye strain in low-light conditions and can save battery life on OLED screens.
+        </Typography>
       </Paper>
     </Box>
   );
