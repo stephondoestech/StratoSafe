@@ -12,17 +12,22 @@ import {
   MenuItem,
   Avatar,
   Divider,
+  Tooltip,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useThemeMode } from '../context/ThemeContext';
 import CloudIcon from '@mui/icons-material/Cloud';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SecurityIcon from '@mui/icons-material/Security';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import PersonIcon from '@mui/icons-material/Person';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
 
 const Layout: React.FC = () => {
-  const { isAuthenticated, logout, user } = useAuth();
+  const { isAuthenticated, logout, user, updateThemePreference } = useAuth();
+  const { mode, toggleColorMode } = useThemeMode();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -45,6 +50,25 @@ const Layout: React.FC = () => {
     navigate('/login');
   };
 
+  // Handle theme toggle with persistence
+  const handleThemeToggle = async () => {
+    // Toggle the visual theme immediately for responsive feel
+    toggleColorMode();
+    
+    // If user is logged in, also update preference in database
+    if (isAuthenticated && user) {
+      try {
+        // Save the new preference (opposite of current mode)
+        const newTheme = mode === 'light' ? 'dark' : 'light';
+        await updateThemePreference(newTheme);
+      } catch (error) {
+        console.error('Failed to save theme preference:', error);
+        // If saving fails, revert the toggle to keep UI and data in sync
+        toggleColorMode();
+      }
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="static">
@@ -55,6 +79,17 @@ const Layout: React.FC = () => {
               StratoSafe
             </Typography>
           </Box>
+
+          {/* Theme toggle icon with tooltip */}
+          <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
+            <IconButton 
+              color="inherit" 
+              onClick={handleThemeToggle} 
+              sx={{ mr: 1 }}
+            >
+              {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+            </IconButton>
+          </Tooltip>
 
           {isAuthenticated ? (
             <Box>

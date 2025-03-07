@@ -1,10 +1,9 @@
-import "reflect-metadata";
+// In backend/src/data-source.ts
 import { DataSource } from "typeorm";
 import { User } from "./models/User";
 import { File } from "./models/File";
-import * as dotenv from "dotenv";
-
-dotenv.config();
+// Import the migration
+import { AddThemePreference1709778342000 } from "./migrations/1709778342000-AddThemePreference";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -13,12 +12,10 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME || "postgres",
   password: process.env.DB_PASSWORD || "postgres",
   database: process.env.DB_DATABASE || "stratosafe",
-  synchronize: true, // Set to false in production
+  synchronize: false, // Set to false when using migrations
   logging: process.env.NODE_ENV !== "production",
   entities: [User, File],
-  migrations: [],
+  migrations: [AddThemePreference1709778342000], // Add your migration here
   subscribers: [],
   ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
-  connectTimeoutMS: 20000, // Increased timeout
-  maxQueryExecutionTime: 10000, // Log slow queries
 });

@@ -14,6 +14,7 @@ import {
   login, 
   getUserProfile, 
   updateUserProfile,
+  updateThemePreference,
   changePassword
 } from "../controllers/userController";
 
@@ -37,6 +38,9 @@ router.post("/register", register as any);
 router.post("/login", login as any);
 router.get("/profile", authMiddleware as any, getUserProfile as any);
 router.put("/profile", authMiddleware as any, updateUserProfile as any);
+
+// Theme preference route
+router.put("/theme-preference", authMiddleware as any, updateThemePreference as any);
 
 // New password change route with stricter rate limiting
 router.post("/change-password", authLimiter, authMiddleware as any, changePassword as any);

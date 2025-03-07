@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { BrowserRouter } from 'react-router-dom';
-import { CssBaseline, ThemeProvider } from '@mui/material';
-import theme from './utils/theme';
+import { CssBaseline } from '@mui/material';
+import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 
 const root = ReactDOM.createRoot(
@@ -14,7 +14,7 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <ThemeProvider theme={theme}>
+      <ThemeProvider>
         <CssBaseline />
         <AuthProvider>
           <App />

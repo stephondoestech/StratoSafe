@@ -37,12 +37,13 @@ Whether you're looking for personal cloud storage or a team collaboration tool, 
 
 ## Features
 
-- **🔐 User Authentication:** Secure login and registration with JWT and bcrypt
-- **📁 File Management:** Easily upload, download, and manage your files
-- **🔒 Privacy-Focused:** Your files are accessible only to you
-- **💻 Modern UI:** Clean, responsive design with Material UI
-- **🐳 Easy Deployment:** Docker ready for quick deployment
-- **📱 Mobile-Friendly:** Access your files on any device
+- **User Authentication:** Secure login and registration with JWT and bcrypt
+- **File Management:** Easily upload, download, and manage your files
+- **Privacy-Focused:** Your files are accessible only to you
+- **Modern UI:** Clean, responsive design with Material UI
+- **Easy Deployment:** Docker ready for quick deployment
+- **Mobile-Friendly:** Access your files on any device
+- **Dark Mode:** Full dark mode support for improved user experience and reduced eye strain
 
 ## Demo
 

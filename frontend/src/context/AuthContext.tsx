@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService } from '../services/api';
+import { useThemeMode } from './ThemeContext';
 
 interface User {
   id: string;
@@ -7,6 +8,7 @@ interface User {
   firstName: string;
   lastName: string;
   mfaEnabled?: boolean;
+  themePreference?: string;
 }
 
 interface MfaSetup {
@@ -35,7 +37,8 @@ interface AuthContextType {
   generateBackupCodes: () => Promise<BackupCodes>;
   getMfaStatus: () => Promise<{ mfaEnabled: boolean; hasBackupCodes: boolean }>;
   clearMfaState: () => void;
-  updateProfile: (userData: { firstName?: string; lastName?: string; email?: string }) => Promise<User>;
+  updateProfile: (userData: { firstName?: string; lastName?: string; email?: string; themePreference?: string }) => Promise<User>;
+  updateThemePreference: (themePreference: string) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
@@ -60,17 +63,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [requiresMfa, setRequiresMfa] = useState(false);
   const [pendingMfaEmail, setPendingMfaEmail] = useState<string | null>(null);
   
+  // Access the theme context to sync user preferences
+  const { mode, toggleColorMode } = useThemeMode();
+  
   // User Profile Update
-  const updateProfile = async (userData: { firstName?: string; lastName?: string; email?: string }) => {
+  const updateProfile = async (userData: { firstName?: string; lastName?: string; email?: string; themePreference?: string }) => {
     const updatedUser = await authService.updateUserProfile(userData);
     setUser(updatedUser);
+    
+    // If theme preference was updated, ensure the theme context is in sync
+    if (userData.themePreference && userData.themePreference !== mode) {
+      toggleColorMode(); // Toggle the theme to match the new preference
+    }
+    
     return updatedUser;
+  };
+
+  // Update only theme preference
+  const updateThemePreference = async (themePreference: string) => {
+    await authService.updateThemePreference(themePreference);
+    
+    // Update the user object in state
+    if (user) {
+      setUser({ ...user, themePreference });
+    }
+    
+    // Ensure the theme context is in sync
+    if ((themePreference === 'dark' && mode === 'light') || 
+        (themePreference === 'light' && mode === 'dark')) {
+      toggleColorMode();
+    }
   };
 
   // Password Change
   const changePassword = async (currentPassword: string, newPassword: string) => {
     await authService.changePassword(currentPassword, newPassword);
   };
+
+  // Apply user's theme preference when profile is loaded
+  useEffect(() => {
+    if (user?.themePreference && user.themePreference !== mode) {
+      toggleColorMode(); // Sync theme with user's preference
+    }
+  }, [user, mode, toggleColorMode]);
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -187,6 +222,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     getMfaStatus,
     clearMfaState,
     updateProfile,
+    updateThemePreference,
     changePassword
   };
 
