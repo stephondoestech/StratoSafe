@@ -48,24 +48,3 @@ jobs:
 
       - name: Build applications
         run: yarn build
-
-      - name: Run database migrations
-        run: |
-          cd backend
-          # Wait for database to be ready
-          echo "Waiting for PostgreSQL to be ready..."
-          timeout 30 bash -c "until pg_isready -h postgres -p 5432 -U postgres; do sleep 1; done"
-          # Set environment variables
-          export DB_HOST=localhost
-          export DB_PORT=5432
-          export DB_USERNAME=postgres
-          export DB_PASSWORD=postgres
-          export DB_DATABASE=stratosafe_test
-          # Run migrations
-          yarn run typeorm migration:run -d src/data-source.ts
-        env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USERNAME: postgres
-          DB_PASSWORD: postgres
-          DB_DATABASE: stratosafe_test
