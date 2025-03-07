@@ -197,7 +197,6 @@ All data is persisted in Docker volumes, so you won't lose information when cont
 - **[Express](https://expressjs.com/)** - Web framework
 - **[TypeORM](https://typeorm.io/)** - ORM for database interaction
 - **[PostgreSQL](https://www.postgresql.org/)** - Relational database
-- **[JWT](https://jwt.io/)** - Authentication mechanism
 - **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
 
 ### Frontend
@@ -205,11 +204,9 @@ All data is persisted in Docker volumes, so you won't lose information when cont
 - **[Material UI](https://mui.com/)** - Component library
 - **[React Router](https://reactrouter.com/)** - Routing
 - **[Axios](https://axios-http.com/)** - HTTP client
-- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
 
 ### Infrastructure
 - **[Docker](https://www.docker.com/)** - Containerization
-- **[Docker Compose](https://docs.docker.com/compose/)** - Multi-container management
 - **[Yarn Workspaces](https://classic.yarnpkg.com/en/docs/workspaces/)** - Monorepo management
 - **[Nginx](https://nginx.org/)** - Web server for frontend (in Docker)
 
