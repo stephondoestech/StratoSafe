@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
-import { User } from "../models/User";
+import { User, UserRole } from "../models/User";
 import * as jwt from "jsonwebtoken";
 import * as dotenv from "dotenv";
+import { isRegistrationAllowed } from "./systemSettingsController";
 
 dotenv.config();
 
@@ -10,6 +11,15 @@ const userRepository = AppDataSource.getRepository(User);
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
+    // Check registration status
+    const registrationAllowed = await isRegistrationAllowed();
+    
+    if (!registrationAllowed) {
+      console.log("Registration rejected - registration is currently disabled");
+      res.status(403).json({ message: "User registration is currently disabled" });
+      return;
+    }
+
     const { email, password, firstName, lastName } = req.body;
 
     // Check if user already exists
@@ -26,12 +36,24 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     user.firstName = firstName;
     user.lastName = lastName;
     user.themePreference = 'light'; // Default to light theme
+    
+    // Check if this is the first user
+    const userCount = await userRepository.count();
+    if (userCount === 0) {
+      // Make the first user an admin
+      user.role = UserRole.ADMIN;
+      console.log(`First user ${email} created with ADMIN role`);
+    } else {
+      user.role = UserRole.USER;
+    }
 
     // Hash password before saving
     await user.hashPassword();
 
     // Save user to database
     await userRepository.save(user);
+    
+    console.log(`New user registered: ${email} with role: ${user.role}`);
 
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;

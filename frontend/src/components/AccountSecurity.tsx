@@ -19,6 +19,7 @@ import SecurityIcon from '@mui/icons-material/Security';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import { useNavigate } from 'react-router-dom';
 import PasswordChange from './PasswordChange';
+import SystemSettingsPanel from './SystemSettingsPanel';
 
 const AccountSecurity: React.FC = () => {
   const [mfaStatus, setMfaStatus] = useState<{ mfaEnabled: boolean; hasBackupCodes: boolean } | null>(null);
@@ -78,7 +79,7 @@ const AccountSecurity: React.FC = () => {
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Account Security
+        Account & System Security
       </Typography>
 
       {error && (
@@ -86,6 +87,9 @@ const AccountSecurity: React.FC = () => {
           {error}
         </Alert>
       )}
+
+      {/* System Settings Section (for admins) */}
+      <SystemSettingsPanel />
 
       {/* Password Change Section */}
       <PasswordChange />

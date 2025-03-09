@@ -9,6 +9,7 @@ import {
   verifyMfaToken
 } from "../controllers/mfaController";
 import { authMiddleware } from "../middlewares/authMiddleware";
+import { adminMiddleware } from "../middlewares/adminMiddleware";
 import { 
   register, 
   login, 
@@ -17,6 +18,12 @@ import {
   updateThemePreference,
   changePassword
 } from "../controllers/userController";
+import {
+  getSystemSettings,
+  updateSystemSettings,
+  getUsersWithRoles,
+  updateUserRole
+} from "../controllers/systemSettingsController";
 
 const router = Router();
 
@@ -52,5 +59,13 @@ router.post("/mfa/enable", limiter, authMiddleware as any, verifyAndEnableMfa as
 router.post("/mfa/disable", limiter, authMiddleware as any, disableMfa as any);
 router.get("/mfa/status", limiter, authMiddleware as any, getMfaStatus as any);
 router.post("/mfa/backup-codes", limiter, authMiddleware as any, generateBackupCodes as any);
+
+// System settings routes
+router.get("/system-settings", authMiddleware as any, getSystemSettings as any);
+router.put("/system-settings", authMiddleware as any, adminMiddleware as any, updateSystemSettings as any);
+
+// User role management routes (admin only)
+router.get("/users", authMiddleware as any, adminMiddleware as any, getUsersWithRoles as any);
+router.put("/user-role", authMiddleware as any, adminMiddleware as any, updateUserRole as any);
 
 export default router;
