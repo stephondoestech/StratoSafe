@@ -6,6 +6,7 @@ import userRoutes from "./routes/userRoutes";
 import fileRoutes from "./routes/fileRoutes";
 import * as path from "path";
 import rateLimit from "express-rate-limit";
+import { getGlobalSettings } from "./controllers/systemSettingsController";
 
 // Load environment variables
 dotenv.config();
@@ -48,6 +49,10 @@ const startServer = async () => {
   try {
     await AppDataSource.initialize();
     console.log("Data Source has been initialized!");
+    
+    // Initialize global settings
+    await getGlobalSettings();
+    console.log("System settings initialized");
     
     // Start server
     app.listen(PORT, () => {

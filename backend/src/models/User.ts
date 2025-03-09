@@ -2,6 +2,12 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, Up
 import { File } from "./File";
 import * as bcrypt from "bcrypt";
 
+// Define possible user roles
+export enum UserRole {
+  USER = "user",
+  ADMIN = "admin"
+}
+
 @Entity()
 export class User {
   @PrimaryGeneratedColumn("uuid")
@@ -18,6 +24,13 @@ export class User {
 
   @Column()
   lastName!: string;
+
+  @Column({
+    type: "enum",
+    enum: UserRole,
+    default: UserRole.USER
+  })
+  role!: UserRole;
 
   @OneToMany(() => File, file => file.owner)
   files!: File[];
@@ -89,5 +102,10 @@ export class User {
     }
     
     return false;
+  }
+
+  // Convenience method to check if user is an admin
+  isAdmin(): boolean {
+    return this.role === UserRole.ADMIN;
   }
 }
