@@ -10,6 +10,8 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./backend/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    networks:
+      - stratosafe-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-stratosafe_user} -d ${DB_DATABASE:-stratosafe}"]
       interval: 5s
@@ -35,17 +37,13 @@ services:
       - DB_USERNAME=${DB_USERNAME:-stratosafe_user}
       - DB_PASSWORD=${DB_PASSWORD:-stratosafe_password}
       - DB_DATABASE=${DB_DATABASE:-stratosafe}
-      - EXTERNAL_STORAGE_PATH=/mnt/external
-      - USE_EXTERNAL_STORAGE=${USE_EXTERNAL_STORAGE:-false}
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - backend_uploads:/app/uploads
-      # External storage mount points
-      # - ${EXTERNAL_STORAGE_1:-./external-storage-1}:/mnt/external/storage1
-      # - ${EXTERNAL_STORAGE_2:-./external-storage-2}:/mnt/external/storage2
-      # You can add more external storage paths as needed
+    networks:
+      - stratosafe-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT:-3001}/api/health"]
       interval: 10s
@@ -61,7 +59,13 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+    networks:
+      - stratosafe-network
     restart: unless-stopped
+
+networks:
+  stratosafe-network:
+    driver: bridge
 
 volumes:
   pgdata:
