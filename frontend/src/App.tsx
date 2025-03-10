@@ -11,6 +11,7 @@ import MfaSetup from './components/MfaSetup';
 import BackupCodes from './components/BackupCodes';
 import AccountSecurity from './components/AccountSecurity';
 import UserProfile from './components/UserProfile';
+import ExternalStorageManager from './components/ExternalStorageManager';
 
 function App() {
   const { isAuthenticated, requiresMfa } = useAuth();
@@ -45,6 +46,16 @@ function App() {
               <UserProfile />
             </ProtectedRoute>
           }
+        />
+        
+        {/* External Storage Route */}
+        <Route 
+          path="external-storage" 
+          element={
+            <ProtectedRoute>
+              <ExternalStorageManager />
+            </ProtectedRoute>
+          } 
         />
         
         {/* Account & MFA Settings Routes */}

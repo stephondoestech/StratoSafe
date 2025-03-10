@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -13,6 +13,7 @@ import {
   Avatar,
   Divider,
   Tooltip,
+  Badge,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -24,12 +25,32 @@ import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import PersonIcon from '@mui/icons-material/Person';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
+import StorageIcon from '@mui/icons-material/Storage';
+import { externalStorageService } from '../services/api';
 
 const Layout: React.FC = () => {
   const { isAuthenticated, logout, user, updateThemePreference } = useAuth();
   const { mode, toggleColorMode } = useThemeMode();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [externalStorageEnabled, setExternalStorageEnabled] = useState<boolean>(false);
+
+  // Check if external storage is enabled
+  useEffect(() => {
+    const checkExternalStorage = async () => {
+      if (isAuthenticated) {
+        try {
+          const status = await externalStorageService.checkStatus();
+          setExternalStorageEnabled(status.enabled);
+        } catch (error) {
+          console.error('Error checking external storage status:', error);
+          setExternalStorageEnabled(false);
+        }
+      }
+    };
+
+    checkExternalStorage();
+  }, [isAuthenticated]);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -39,9 +60,9 @@ const Layout: React.FC = () => {
     setAnchorEl(null);
   };
 
-  const handleSecurity = () => {
+  const handleNavigation = (path: string) => {
     handleClose();
-    navigate('/account/security');
+    navigate(path);
   };
 
   const handleLogout = () => {
@@ -78,6 +99,30 @@ const Layout: React.FC = () => {
             <Typography variant="h6" component={RouterLink} to="/" sx={{ textDecoration: 'none', color: 'white' }}>
               StratoSafe
             </Typography>
+
+            {isAuthenticated && (
+              <Box sx={{ ml: 4, display: { xs: 'none', md: 'flex' } }}>
+                <Button
+                  color="inherit"
+                  component={RouterLink}
+                  to="/dashboard"
+                  sx={{ mr: 2 }}
+                >
+                  Dashboard
+                </Button>
+                
+                {externalStorageEnabled && (
+                  <Button
+                    color="inherit"
+                    component={RouterLink}
+                    to="/external-storage"
+                    startIcon={<StorageIcon />}
+                  >
+                    External Storage
+                  </Button>
+                )}
+              </Box>
+            )}
           </Box>
 
           {/* Theme toggle icon with tooltip */}
@@ -126,15 +171,25 @@ const Layout: React.FC = () => {
                     {user?.email}
                   </Typography>
                 </Box>
-                <MenuItem onClick={() => { handleClose(); navigate('/account/profile'); }}>
+                <MenuItem onClick={() => handleNavigation('/account/profile')}>
                   <PersonIcon sx={{ mr: 1, fontSize: 20 }} />
                   My Profile
                 </MenuItem>
                 <Divider />
-                <MenuItem onClick={handleSecurity}>
+                <MenuItem onClick={() => handleNavigation('/account/security')}>
                   <SecurityIcon sx={{ mr: 1, fontSize: 20 }} />
                   Security Settings
                 </MenuItem>
+
+                {/* Only show this menu item if external storage is enabled */}
+                {externalStorageEnabled && (
+                  <MenuItem onClick={() => handleNavigation('/external-storage')}>
+                    <StorageIcon sx={{ mr: 1, fontSize: 20 }} />
+                    External Storage
+                  </MenuItem>
+                )}
+
+                <Divider />
                 <MenuItem onClick={handleLogout}>
                   <ExitToAppIcon sx={{ mr: 1, fontSize: 20 }} />
                   Logout

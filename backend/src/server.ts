@@ -4,9 +4,11 @@ import * as dotenv from "dotenv";
 import { AppDataSource } from "./data-source";
 import userRoutes from "./routes/userRoutes";
 import fileRoutes from "./routes/fileRoutes";
+import externalStorageRoutes from "./routes/externalStorageRoutes";
 import * as path from "path";
 import rateLimit from "express-rate-limit";
 import { getGlobalSettings } from "./controllers/systemSettingsController";
+import { externalStorageService } from "./services/ExternalStorageService";
 
 // Load environment variables
 dotenv.config();
@@ -28,12 +30,19 @@ app.use(limiter);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', timestamp: new Date() });
+  const externalStorageStatus = externalStorageService.isEnabled() 
+    ? 'enabled' : 'disabled';
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date(),
+    externalStorage: externalStorageStatus
+  });
 });
 
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/files", fileRoutes);
+app.use("/api/external-storage", externalStorageRoutes);
 
 // Serve static files in production
 if (process.env.NODE_ENV === "production") {
@@ -53,6 +62,15 @@ const startServer = async () => {
     // Initialize global settings
     await getGlobalSettings();
     console.log("System settings initialized");
+    
+    // Log external storage status
+    if (externalStorageService.isEnabled()) {
+      console.log(`External storage is enabled at: ${process.env.EXTERNAL_STORAGE_PATH || '/mnt/external'}`);
+      const locations = await externalStorageService.getStorageLocations();
+      console.log(`Available storage locations: ${locations.join(', ')}`);
+    } else {
+      console.log('External storage is disabled. Set USE_EXTERNAL_STORAGE=true to enable it.');
+    }
     
     // Start server
     app.listen(PORT, () => {

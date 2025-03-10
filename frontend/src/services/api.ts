@@ -150,4 +150,91 @@ export const fileService = {
   },
 };
 
+// External Storage services (new)
+export const externalStorageService = {
+  // Get available storage locations
+  getStorageLocations: async () => {
+    const response = await api.get('/external-storage/locations');
+    return response.data.locations;
+  },
+  
+  // List files in a specific storage location
+  listFiles: async (storageLocation: string, path: string = '') => {
+    const response = await api.get(`/external-storage/${storageLocation}/files`, {
+      params: { path }
+    });
+    return response.data.files;
+  },
+  
+  // Upload a file to external storage
+  uploadFile: async (storageLocation: string, file: File, path: string = '') => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('path', path);
+    
+    const response = await api.post(`/external-storage/${storageLocation}/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+  
+  // Download a file from external storage
+  downloadFile: async (storageLocation: string, filePath: string) => {
+    const response = await api.get(`/external-storage/${storageLocation}/download`, {
+      params: { path: filePath },
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+  
+  // Delete a file from external storage
+  deleteFile: async (storageLocation: string, filePath: string) => {
+    const response = await api.delete(`/external-storage/${storageLocation}/files`, {
+      params: { path: filePath }
+    });
+    return response.data;
+  },
+  
+  // Create a directory in external storage
+  createDirectory: async (storageLocation: string, dirPath: string) => {
+    const response = await api.post(`/external-storage/${storageLocation}/directories`, {
+      path: dirPath
+    });
+    return response.data;
+  },
+  
+  // Move a file or directory
+  moveItem: async (sourceStorage: string, sourcePath: string, destStorage: string, destPath: string) => {
+    const response = await api.post('/external-storage/move', {
+      sourceStorage,
+      sourcePath,
+      destStorage,
+      destPath
+    });
+    return response.data;
+  },
+  
+  // Get storage statistics
+  getStorageStats: async (storageLocation: string) => {
+    const response = await api.get(`/external-storage/${storageLocation}/stats`);
+    return response.data.stats;
+  },
+  
+  // Check if external storage is enabled
+  checkStatus: async () => {
+    try {
+      const response = await api.get('/health');
+      return {
+        enabled: response.data.externalStorage === 'enabled',
+        status: response.data.status,
+      };
+    } catch (error) {
+      console.error('Error checking external storage status:', error);
+      return { enabled: false, status: 'error' };
+    }
+  }
+};
+
 export default api;
