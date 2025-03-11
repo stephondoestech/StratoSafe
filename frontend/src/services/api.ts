@@ -116,7 +116,37 @@ export const authService = {
 };
 
 // File services
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  order?: 'asc' | 'desc';
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface FileMetadata {
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  path?: string; // Hidden from client for security
+  uploadedAt: string;
+  updatedAt: string;
+  description?: string;
+}
+
 export const fileService = {
+  // Upload a file with optional description
   uploadFile: async (file: File, description?: string) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -132,11 +162,24 @@ export const fileService = {
     return response.data;
   },
   
-  getUserFiles: async () => {
-    const response = await api.get('/files');
+  // Get files with pagination and sorting
+  getUserFiles: async (params: PaginationParams = {}) => {
+    const { page = 0, limit = 10, sortBy = 'uploadedAt', order = 'desc' } = params;
+    
+    const response = await api.get<PaginatedResponse<FileMetadata>>('/files', {
+      params: { page, limit, sortBy, order }
+    });
+    
     return response.data;
   },
   
+  // Get details for a specific file
+  getFileDetails: async (fileId: string) => {
+    const response = await api.get<FileMetadata>(`/files/${fileId}`);
+    return response.data;
+  },
+  
+  // Download a file by ID
   downloadFile: async (fileId: string) => {
     const response = await api.get(`/files/download/${fileId}`, {
       responseType: 'blob',
@@ -144,6 +187,7 @@ export const fileService = {
     return response.data;
   },
   
+  // Delete a file by ID
   deleteFile: async (fileId: string) => {
     const response = await api.delete(`/files/${fileId}`);
     return response.data;

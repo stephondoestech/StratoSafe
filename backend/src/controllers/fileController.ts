@@ -46,17 +46,44 @@ export const uploadFile = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-// Get all files for user
+// Get all files for user with pagination and sorting
 export const getUserFiles = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
 
-    const files = await fileRepository.find({
+    // Parse pagination parameters
+    const page = parseInt(req.query.page as string) || 0;
+    const limit = parseInt(req.query.limit as string) || 10;
+    
+    // Parse sorting parameters
+    const sortBy = (req.query.sortBy as string) || 'uploadedAt';
+    const order = (req.query.order as string) || 'desc';
+    
+    // Validate sortBy field to prevent SQL injection
+    const allowedSortFields = ['originalName', 'size', 'uploadedAt', 'updatedAt', 'description'];
+    const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'uploadedAt';
+    
+    // Validate order direction
+    const validOrder = order === 'asc' ? 'ASC' : 'DESC';
+    
+    // Build the query with pagination and sorting
+    const [files, total] = await fileRepository.findAndCount({
       where: { owner: { id: userId } },
-      order: { uploadedAt: "DESC" }
+      order: { [validSortBy]: validOrder },
+      skip: page * limit,
+      take: limit,
     });
 
-    res.json(files);
+    // Return data with pagination metadata
+    res.json({
+      data: files,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      }
+    });
   } catch (error) {
     console.error("Error fetching files:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -120,6 +147,29 @@ export const deleteFile = async (req: Request, res: Response): Promise<void> => 
     res.json({ message: "File deleted successfully" });
   } catch (error) {
     console.error("Error deleting file:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get file details for a specific file
+export const getFileDetails = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const fileId = req.params.id;
+    const userId = req.user?.id;
+
+    // Find file with owner check for security
+    const file = await fileRepository.findOne({
+      where: { id: fileId, owner: { id: userId } }
+    });
+
+    if (!file) {
+      res.status(404).json({ message: "File not found" });
+      return;
+    }
+
+    res.json(file);
+  } catch (error) {
+    console.error("Error fetching file details:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
