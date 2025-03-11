@@ -150,4 +150,56 @@ export const fileService = {
   },
 };
 
+// Storage services
+export const storageService = {
+  // Get all storage configurations
+  getAllStorageConfigs: async () => {
+    const response = await api.get('/storage');
+    return response.data;
+  },
+  
+  // Get available storage paths
+  getAvailableStoragePaths: async () => {
+    const response = await api.get('/storage/available-paths');
+    return response.data;
+  },
+  
+  // Create a new storage configuration (admin only)
+  createStorageConfig: async (data: { name: string; mountPath: string; displayName: string; description?: string }) => {
+    const response = await api.post('/storage', data);
+    return response.data;
+  },
+  
+  // Update a storage configuration (admin only)
+  updateStorageConfig: async (id: string, data: { name?: string; displayName?: string; description?: string; isActive?: boolean }) => {
+    const response = await api.put(`/storage/${id}`, data);
+    return response.data;
+  },
+  
+  // Delete a storage configuration (admin only)
+  deleteStorageConfig: async (id: string) => {
+    const response = await api.delete(`/storage/${id}`);
+    return response.data;
+  },
+  
+// Update global external storage settings (admin only)
+updateExternalStorageSettings: async (allowExternalStorage: boolean) => {
+  console.log("Sending request to update external storage settings:", { allowExternalStorage });
+  try {
+    const response = await api.put('/storage/settings/global', { allowExternalStorage });
+    console.log("Response from updateExternalStorageSettings:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error in updateExternalStorageSettings:", error);
+    throw error;
+  }
+},
+  
+  // Update user external storage access
+  updateUserExternalStorageAccess: async (externalStorageAccess: boolean) => {
+    const response = await api.put('/storage/user-access', { externalStorageAccess });
+    return response.data;
+  }
+};
+
 export default api;

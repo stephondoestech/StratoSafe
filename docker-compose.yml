@@ -42,6 +42,10 @@ services:
         condition: service_healthy
     volumes:
       - backend_uploads:/app/uploads
+      # External storage mounting - add additional storage as needed
+      - ${EXTERNAL_STORAGE_1:-./external-storage-1}:/mnt/external/storage1
+      - ${EXTERNAL_STORAGE_2:-./external-storage-2}:/mnt/external/storage2
+      - ${EXTERNAL_STORAGE_3:-./external-storage-3}:/mnt/external/storage3
     networks:
       - stratosafe-network
     healthcheck:
@@ -70,3 +74,4 @@ networks:
 volumes:
   pgdata:
   backend_uploads:
+

@@ -11,6 +11,7 @@ import MfaSetup from './components/MfaSetup';
 import BackupCodes from './components/BackupCodes';
 import AccountSecurity from './components/AccountSecurity';
 import UserProfile from './components/UserProfile';
+import Storage from './pages/Storage';
 
 function App() {
   const { isAuthenticated, requiresMfa } = useAuth();
@@ -45,6 +46,14 @@ function App() {
               <UserProfile />
             </ProtectedRoute>
           }
+        />
+        <Route 
+          path="storage" 
+          element={
+            <ProtectedRoute>
+              <Storage />
+            </ProtectedRoute>
+          } 
         />
         
         {/* Account & MFA Settings Routes */}

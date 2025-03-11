@@ -49,10 +49,11 @@ export const getSystemSettings = async (req: Request, res: Response): Promise<vo
       return;
     }
     
-    // For non-admin users, only return allowRegistration
+    // For non-admin users, only return allowRegistration and allowExternalStorage
     if (user.role !== UserRole.ADMIN) {
       res.json({
-        allowRegistration: settings.allowRegistration
+        allowRegistration: settings.allowRegistration,
+        allowExternalStorage: settings.allowExternalStorage || false
       });
       return;
     }

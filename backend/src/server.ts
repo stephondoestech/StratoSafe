@@ -7,6 +7,7 @@ import fileRoutes from "./routes/fileRoutes";
 import * as path from "path";
 import rateLimit from "express-rate-limit";
 import { getGlobalSettings } from "./controllers/systemSettingsController";
+import storageRoutes from "./routes/storageRoutes";
 
 // Load environment variables
 dotenv.config();
@@ -34,6 +35,7 @@ app.get('/health', (req: Request, res: Response) => {
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/files", fileRoutes);
+app.use("/api/storage", storageRoutes);
 
 // Serve static files in production
 if (process.env.NODE_ENV === "production") {

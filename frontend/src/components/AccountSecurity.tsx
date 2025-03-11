@@ -20,6 +20,7 @@ import LockOpenIcon from '@mui/icons-material/LockOpen';
 import { useNavigate } from 'react-router-dom';
 import PasswordChange from './PasswordChange';
 import SystemSettingsPanel from './SystemSettingsPanel';
+import ExternalStorageSettings from './ExternalStorageSettings';
 
 const AccountSecurity: React.FC = () => {
   const [mfaStatus, setMfaStatus] = useState<{ mfaEnabled: boolean; hasBackupCodes: boolean } | null>(null);
@@ -222,6 +223,9 @@ const AccountSecurity: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      
+      {/* External Storage Settings Section */}
+      <ExternalStorageSettings />
     </Box>
   );
 };

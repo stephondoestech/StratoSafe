@@ -7,8 +7,10 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  role?: string;
   mfaEnabled?: boolean;
   themePreference?: string;
+  externalStorageAccess?: boolean;
 }
 
 interface MfaSetup {
@@ -27,6 +29,7 @@ interface AuthContextType {
   isLoading: boolean;
   requiresMfa: boolean;
   pendingMfaEmail: string | null;
+  isAdmin: boolean; 
   login: (email: string, password: string) => Promise<void>;
   verifyMfa: (token: string, isBackupCode?: boolean) => Promise<void>;
   register: (userData: { email: string; password: string; firstName: string; lastName: string }) => Promise<void>;
@@ -175,6 +178,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await login(userData.email, userData.password);
   };
 
+  const isAdmin = user?.role === 'admin';
+
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
@@ -211,6 +216,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     requiresMfa,
     pendingMfaEmail,
+    isAdmin,
     login,
     verifyMfa,
     register,

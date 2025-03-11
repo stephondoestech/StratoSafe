@@ -7,6 +7,10 @@ export class SystemSettings {
 
   @Column({ default: true })
   allowRegistration!: boolean;
+  
+  // New setting for global external storage access
+  @Column({ default: false })
+  allowExternalStorage!: boolean;
 
   @CreateDateColumn()
   createdAt!: Date;

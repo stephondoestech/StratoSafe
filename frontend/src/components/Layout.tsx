@@ -24,6 +24,7 @@ import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import PersonIcon from '@mui/icons-material/Person';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
+import StorageIcon from '@mui/icons-material/Storage';
 
 const Layout: React.FC = () => {
   const { isAuthenticated, logout, user, updateThemePreference } = useAuth();
