@@ -4,9 +4,11 @@ import {
   getUserFiles, 
   downloadFile, 
   deleteFile,
-  getFileDetails 
+  getFileDetails,
+  getFileStats
 } from "../controllers/fileController";
 import { authMiddleware } from "../middlewares/authMiddleware";
+import { adminMiddleware } from "../middlewares/adminMiddleware";
 import multer from "multer";
 import * as path from "path";
 import * as fs from "fs";
@@ -49,6 +51,14 @@ const upload = multer({
 });
 
 const router = Router();
+
+// Get file statistics (admin only)
+router.get(
+  "/stats", 
+  authMiddleware as any,
+  adminMiddleware as any,
+  getFileStats as any
+);
 
 // Get all files with pagination and sorting
 router.get(

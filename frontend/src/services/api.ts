@@ -1,4 +1,12 @@
 import axios from 'axios';
+import { 
+  FileMetadata, 
+  PaginatedResponse, 
+  FilePaginationParams, 
+  FileUploadResponse,
+  FileDeleteResponse,
+  FileStats
+} from '../types/file.interfaces';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
@@ -116,71 +124,43 @@ export const authService = {
 };
 
 // File services
-export interface PaginationParams {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  order?: 'asc' | 'desc';
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-export interface FileMetadata {
-  id: string;
-  filename: string;
-  originalName: string;
-  mimeType: string;
-  size: number;
-  path?: string; // Hidden from client for security
-  uploadedAt: string;
-  updatedAt: string;
-  description?: string;
-}
-
 export const fileService = {
   // Upload a file with optional description
-  uploadFile: async (file: File, description?: string) => {
+  uploadFile: async (file: File, description?: string): Promise<FileUploadResponse> => {
     const formData = new FormData();
     formData.append('file', file);
     if (description) {
       formData.append('description', description);
     }
     
-    const response = await api.post('/files/upload', formData, {
+    const response = await api.post<FileUploadResponse>('/files/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+    
     return response.data;
   },
   
   // Get files with pagination and sorting
-  getUserFiles: async (params: PaginationParams = {}) => {
-    const { page = 0, limit = 10, sortBy = 'uploadedAt', order = 'desc' } = params;
+  getUserFiles: async (params: FilePaginationParams = {}): Promise<PaginatedResponse<FileMetadata>> => {
+    const { page = 0, limit = 10, sortBy = 'uploadedAt', order = 'desc', search = '' } = params;
     
     const response = await api.get<PaginatedResponse<FileMetadata>>('/files', {
-      params: { page, limit, sortBy, order }
+      params: { page, limit, sortBy, order, search }
     });
     
     return response.data;
   },
   
   // Get details for a specific file
-  getFileDetails: async (fileId: string) => {
+  getFileDetails: async (fileId: string): Promise<FileMetadata> => {
     const response = await api.get<FileMetadata>(`/files/${fileId}`);
     return response.data;
   },
   
   // Download a file by ID
-  downloadFile: async (fileId: string) => {
+  downloadFile: async (fileId: string): Promise<Blob> => {
     const response = await api.get(`/files/download/${fileId}`, {
       responseType: 'blob',
     });
@@ -188,8 +168,14 @@ export const fileService = {
   },
   
   // Delete a file by ID
-  deleteFile: async (fileId: string) => {
-    const response = await api.delete(`/files/${fileId}`);
+  deleteFile: async (fileId: string): Promise<FileDeleteResponse> => {
+    const response = await api.delete<FileDeleteResponse>(`/files/${fileId}`);
+    return response.data;
+  },
+  
+  // Get file statistics (admin only)
+  getFileStats: async (): Promise<FileStats> => {
+    const response = await api.get<FileStats>('/files/stats');
     return response.data;
   },
 };

@@ -4,6 +4,7 @@ import { User, UserRole } from "../models/User";
 import * as jwt from "jsonwebtoken";
 import * as dotenv from "dotenv";
 import { isRegistrationAllowed } from "./systemSettingsController";
+import { MfaService } from "../services/MfaService";
 
 dotenv.config();
 
@@ -94,8 +95,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     // If MFA is not enabled, generate JWT token and proceed with normal login
+    // Include user role in the token
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET || "supersecretkey123",
       { expiresIn: "1d" }
     );
@@ -220,7 +222,7 @@ export const updateThemePreference = async (req: Request, res: Response): Promis
   }
 };
 
-// New change password functionality
+// Change password functionality
 export const changePassword = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
@@ -264,6 +266,117 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
     });
   } catch (error) {
     console.error("Error changing password:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// MFA verification after login
+export const verifyMfaToken = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, token, isBackupCode } = req.body;
+    
+    // Find user by email
+    const user = await userRepository.findOne({ where: { email } });
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    
+    let isValid = false;
+    
+    if (isBackupCode) {
+      // Verify backup code
+      isValid = await user.verifyBackupCode(token);
+      if (isValid) {
+        // Save the user to update the backup codes list (removing the used one)
+        await userRepository.save(user);
+      }
+    } else {
+      // Verify TOTP token
+      isValid = user.mfaSecret ? MfaService.verifyToken(token, user.mfaSecret) : false;
+    }
+    
+    if (!isValid) {
+      res.status(401).json({ message: isBackupCode ? "Invalid backup code" : "Invalid token" });
+      return;
+    }
+    
+    // Generate JWT token with user role
+    const jwtToken = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || "supersecretkey123",
+      { expiresIn: "1d" }
+    );
+    
+    // Return user info and token
+    const { password: _, mfaSecret: __, mfaBackupCodes: ___, ...userWithoutSensitiveInfo } = user;
+    res.json({
+      user: userWithoutSensitiveInfo,
+      token: jwtToken
+    });
+  } catch (error) {
+    console.error("Error verifying MFA token:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get all users (admin only)
+export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // User role check is handled by adminMiddleware
+    
+    const users = await userRepository.find({
+      select: ["id", "email", "firstName", "lastName", "role", "mfaEnabled", "createdAt", "updatedAt"]
+    });
+    
+    res.json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Update user role (admin only)
+export const updateUserRole = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // User role check is handled by adminMiddleware
+    
+    const { userId, role } = req.body;
+    
+    // Validate input
+    if (!userId || !role) {
+      res.status(400).json({ message: "User ID and role are required" });
+      return;
+    }
+    
+    // Validate role value
+    if (![UserRole.USER, UserRole.ADMIN].includes(role)) {
+      res.status(400).json({ message: `Invalid role. Must be '${UserRole.USER}' or '${UserRole.ADMIN}'` });
+      return;
+    }
+    
+    // Prevent changing own role
+    if (userId === req.user?.id) {
+      res.status(400).json({ message: "You cannot change your own role" });
+      return;
+    }
+    
+    // Find user
+    const user = await userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    
+    // Update role
+    user.role = role;
+    await userRepository.save(user);
+    
+    // Return updated user without sensitive information
+    const { password: _, mfaSecret: __, mfaBackupCodes: ___, ...userWithoutSensitiveInfo } = user;
+    res.json(userWithoutSensitiveInfo);
+  } catch (error) {
+    console.error("Error updating user role:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

@@ -25,6 +25,11 @@ import {
   Menu,
   MenuItem,
   ListItemIcon,
+  TextField,
+  InputAdornment,
+  Card,
+  CardContent,
+  Grid,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -36,32 +41,26 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import SortIcon from '@mui/icons-material/Sort';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { fileService, PaginatedResponse, FileMetadata as ApiFileMetadata } from '../services/api';
-
-// Type definitions for file metadata
-export interface FileMetadata {
-  id: string;
-  filename: string;
-  originalName: string;
-  mimeType: string;
-  size: number;
-  uploadedAt: string;
-  updatedAt: string;
-  description?: string;
-}
-
-// Type for sort order
-type Order = 'asc' | 'desc';
+import PersonIcon from '@mui/icons-material/Person';
+import SearchIcon from '@mui/icons-material/Search';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import FolderIcon from '@mui/icons-material/Folder';
+import { fileService } from '../services/api';
+import { FileMetadata, PaginatedResponse, SortOrder } from '../types/file.interfaces';
+import { useAuth } from '../context/AuthContext';
 
 // Type for file list props
 interface FileListProps {
-  files?: FileMetadata[];
-  onFileDeleted: () => void;
+  onFileDeleted: (message?: string) => void;
   initialPageSize?: number;
 }
 
 // Using directly typed API response instead of passing files via props
 const FileList: React.FC<FileListProps> = ({ onFileDeleted, initialPageSize = 10 }) => {
+  // Get auth context to check if user is admin
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  
   // State for files, loading, and error conditions
   const [files, setFiles] = useState<FileMetadata[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,11 +77,33 @@ const FileList: React.FC<FileListProps> = ({ onFileDeleted, initialPageSize = 10
   
   // State for sorting
   const [orderBy, setOrderBy] = useState<keyof FileMetadata>('uploadedAt');
-  const [order, setOrder] = useState<Order>('desc');
+  const [order, setOrder] = useState<SortOrder>('desc');
   
   // State for action menu
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedFile, setSelectedFile] = useState<FileMetadata | null>(null);
+  
+  // State for search
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  
+  // Debounce search term
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+    
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [searchTerm]);
+  
+  // Reset page when search term changes
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearchTerm]);
+
+  console.log('Is admin check:', user?.role, isAdmin);
 
   // Fetch files from the API with pagination and sorting
   const fetchFiles = async () => {
@@ -93,11 +114,13 @@ const FileList: React.FC<FileListProps> = ({ onFileDeleted, initialPageSize = 10
       const response: PaginatedResponse<FileMetadata> = await fileService.getUserFiles({
         page,
         limit: rowsPerPage,
-        sortBy: orderBy as string,
-        order
+        sortBy: orderBy as any,
+        order,
+        search: debouncedSearchTerm
       });
       
       setFiles(response.data);
+      console.log('Files received from API:', response.data);
       setTotalFiles(response.meta.total);
     } catch (err) {
       console.error('Error fetching files:', err);
@@ -107,10 +130,10 @@ const FileList: React.FC<FileListProps> = ({ onFileDeleted, initialPageSize = 10
     }
   };
 
-  // Fetch files when pagination or sorting changes
+  // Fetch files when pagination, sorting, or search changes
   useEffect(() => {
     fetchFiles();
-  }, [page, rowsPerPage, orderBy, order]);
+  }, [page, rowsPerPage, orderBy, order, debouncedSearchTerm]);
 
   // Handle page change
   const handleChangePage = (event: unknown, newPage: number) => {
@@ -168,8 +191,9 @@ const FileList: React.FC<FileListProps> = ({ onFileDeleted, initialPageSize = 10
     if (fileToDelete) {
       try {
         await fileService.deleteFile(fileToDelete.id);
-        onFileDeleted();
+        onFileDeleted(`File "${fileToDelete.originalName}" deleted successfully`);
         closeDeleteDialog();
+        fetchFiles(); // Refresh file list
       } catch (error) {
         console.error('Error deleting file:', error);
         setError('Failed to delete file. Please try again.');
@@ -202,8 +226,8 @@ const FileList: React.FC<FileListProps> = ({ onFileDeleted, initialPageSize = 10
   };
 
   // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (dateInput: Date | string) => {
+    const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
     return date.toLocaleString();
   };
 
@@ -217,6 +241,69 @@ const FileList: React.FC<FileListProps> = ({ onFileDeleted, initialPageSize = 10
   const handleCloseMenu = () => {
     setMenuAnchorEl(null);
     setSelectedFile(null);
+  };
+  
+  // Handle search input change
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
+  // Render file stats cards (admin only)
+  const renderFileStats = () => {
+    if (!isAdmin) return null;
+    
+    return (
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          File Statistics
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={4}>
+            <Card>
+              <CardContent>
+                <Typography color="text.secondary" gutterBottom>
+                  Total Files
+                </Typography>
+                <Typography variant="h5" component="div">
+                  {totalFiles}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          {isAdmin && (
+            <Grid item xs={12} sm={4}>
+              <Card>
+                <CardContent>
+                  <Typography color="text.secondary" gutterBottom>
+                    Admin View
+                  </Typography>
+                  <Typography variant="body2">
+                    <Chip 
+                      icon={<AdminPanelSettingsIcon />} 
+                      label="Admin privileges active" 
+                      color="primary" 
+                      size="small" 
+                    />
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+          <Grid item xs={12} sm={4}>
+            <Card>
+              <CardContent>
+                <Typography color="text.secondary" gutterBottom>
+                  Sort By
+                </Typography>
+                <Typography variant="body2">
+                  {orderBy} ({order})
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
+    );
   };
 
   // Render loading state
@@ -248,10 +335,14 @@ const FileList: React.FC<FileListProps> = ({ onFileDeleted, initialPageSize = 10
     return (
       <Paper elevation={3} sx={{ p: 3 }}>
         <Typography variant="h6" align="center">
-          No files uploaded yet
+          No files {debouncedSearchTerm ? 'match your search' : 'uploaded yet'}
         </Typography>
         <Typography variant="body2" align="center" sx={{ mt: 1 }}>
-          Click "Upload New File" above to get started
+          {debouncedSearchTerm ? (
+            <Button onClick={() => setSearchTerm('')}>Clear Search</Button>
+          ) : (
+            "Click \"Upload New File\" above to get started"
+          )}
         </Typography>
       </Paper>
     );
@@ -260,9 +351,28 @@ const FileList: React.FC<FileListProps> = ({ onFileDeleted, initialPageSize = 10
   return (
     <>
       <Paper elevation={3} sx={{ p: 3 }}>
-        <Typography variant="h5" component="h2" gutterBottom>
-          Your Files
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h5" component="h2">
+            Your Files {isAdmin && <Chip size="small" color="primary" icon={<AdminPanelSettingsIcon />} label="Admin View" sx={{ ml: 1 }} />}
+          </Typography>
+          
+          <TextField
+            placeholder="Search files..."
+            size="small"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ width: { xs: '100%', sm: '250px' } }}
+          />
+        </Box>
+        
+        {renderFileStats()}
         
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -317,8 +427,24 @@ const FileList: React.FC<FileListProps> = ({ onFileDeleted, initialPageSize = 10
                 files.map((file) => (
                   <TableRow key={file.id}>
                     <TableCell>{getFileIcon(file.mimeType)}</TableCell>
-                    <TableCell>{file.originalName}</TableCell>
-                    <TableCell>{file.description || '-'}</TableCell>
+                    <TableCell>
+                      <Tooltip title={file.originalName}>
+                        <Typography noWrap sx={{ maxWidth: 200 }}>
+                          {file.originalName}
+                        </Typography>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell>
+                      {file.description ? (
+                        <Tooltip title={file.description}>
+                          <Typography noWrap sx={{ maxWidth: 200 }}>
+                            {file.description}
+                          </Typography>
+                        </Tooltip>
+                      ) : (
+                        '-'
+                      )}
+                    </TableCell>
                     <TableCell>{formatFileSize(file.size)}</TableCell>
                     <TableCell>{formatDate(file.uploadedAt)}</TableCell>
                     <TableCell align="right">
@@ -346,6 +472,16 @@ const FileList: React.FC<FileListProps> = ({ onFileDeleted, initialPageSize = 10
                             <MoreVertIcon />
                           </IconButton>
                         </Tooltip>
+                        {file.path && (
+                          <Tooltip title="You have access to the file path">
+                            <Chip 
+                              size="small" 
+                              color="info" 
+                              label={isAdmin ? "Admin" : "Owner"} 
+                              sx={{ ml: 1 }}
+                            />
+                          </Tooltip>
+                        )}
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -390,6 +526,30 @@ const FileList: React.FC<FileListProps> = ({ onFileDeleted, initialPageSize = 10
           </ListItemIcon>
           <Typography color="error">Delete</Typography>
         </MenuItem>
+        
+        {/* Show file path only if available (admin/owner) */}
+        {selectedFile && selectedFile.path && (
+          <MenuItem onClick={handleCloseMenu}>
+            <ListItemIcon>
+              <DescriptionIcon fontSize="small" />
+            </ListItemIcon>
+            <Typography variant="body2" sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              Path: {selectedFile.path}
+            </Typography>
+          </MenuItem>
+        )}
+        
+        {/* Show owner info if available (admin only) */}
+        {selectedFile && selectedFile.ownerEmail && (
+          <MenuItem onClick={handleCloseMenu}>
+            <ListItemIcon>
+              <PersonIcon fontSize="small" />
+            </ListItemIcon>
+            <Typography variant="body2">
+              Owner: {selectedFile.ownerName || selectedFile.ownerEmail}
+            </Typography>
+          </MenuItem>
+        )}
       </Menu>
 
       {/* Delete confirmation dialog */}

@@ -9,6 +9,7 @@ interface User {
   lastName: string;
   mfaEnabled?: boolean;
   themePreference?: string;
+  role?: string;
 }
 
 interface MfaSetup {
