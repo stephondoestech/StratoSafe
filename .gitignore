@@ -139,3 +139,6 @@ dist
 frontend/.DS_Store
 .DS_Store
 tests/.env.bak
+
+# AI generated code
+CLAUDE.md
