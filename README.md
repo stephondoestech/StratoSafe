@@ -30,20 +30,19 @@ Whether you're looking for personal cloud storage or a team collaboration tool, 
   <a href="#installation">Installation</a> •
   <a href="#usage">Usage</a> •
   <a href="#tech-stack">Tech Stack</a> •
-  <a href="#project-structure">Project Structure</a> •
   <a href="#contributing">Contributing</a> •
   <a href="#license">License</a>
 </p>
 
 ## Features
 
-- **User Authentication:** Secure login and registration with JWT and bcrypt
-- **File Management:** Easily upload, download, and manage your files
-- **Privacy-Focused:** Your files are accessible only to you
-- **Modern UI:** Clean, responsive design with Material UI
-- **Easy Deployment:** Docker ready for quick deployment
-- **Mobile-Friendly:** Access your files on any device
-- **Dark Mode:** Full dark mode support for improved user experience and reduced eye strain
+- **🔐 Secure Authentication** - JWT-based login with multi-factor authentication (MFA) support
+- **📁 File Management** - Upload, download, organize, and manage your files with ease
+- **🛡️ Privacy-Focused** - Role-based access control ensures your files stay secure
+- **🎨 Modern UI** - Clean, responsive design with Material UI and dark mode support
+- **🚀 Easy Deployment** - Docker-ready for quick deployment anywhere
+- **📱 Mobile-Friendly** - Access your files on any device, anytime
+- **⚙️ Admin Controls** - System settings and user management for administrators
 
 ## Demo
 
@@ -61,7 +60,7 @@ Profile Edit Page:
 
 ### Security Settings Pages
 
-MFA Regisration Page:
+MFA Registration Page:
 
 ![StratoSafe MFA Page](./frontend/assets/demo_mfa.png)
 
@@ -71,29 +70,27 @@ Change Password Page:
 
 ## Quick Start
 
-The fastest way to get StratoSafe running is with Docker:
+Get StratoSafe running in just 3 commands:
 
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone https://github.com/stephondoestech/stratosafe.git
 cd stratosafe
 
-# Create environment file
-cat > .env << 'EOF'
-PORT=3001
-JWT_SECRET=supersecretkey123
-DB_HOST=postgres
-DB_PORT=5432
-DB_USERNAME=stratosafe_user
-DB_PASSWORD=stratosafe_password
-DB_DATABASE=stratosafe
-EOF
+# 2. Set up environment configuration
+make config
 
-# Build and start with Docker
+# 3. Start with Docker
 make docker
 ```
 
-Then open http://localhost:3000 in your browser.
+**Important:** Edit the `.env` file to set a secure JWT secret before running:
+```bash
+# Generate a secure JWT secret (required)
+openssl rand -base64 32
+```
+
+Then open **http://localhost:3000** in your browser to get started!
 
 ## Installation
 
@@ -120,15 +117,12 @@ Then open http://localhost:3000 in your browser.
    ```
 
 3. **Configure environment variables:**
-   Create a `.env` file in the root directory with the following content:
-   ```
-   PORT=3001
-   JWT_SECRET=your_secure_secret_key
-   DB_HOST=127.0.0.1  # Use 'postgres' for Docker
-   DB_PORT=5432
-   DB_USERNAME=your_db_username
-   DB_PASSWORD=your_db_password
-   DB_DATABASE=stratosafe
+   ```bash
+   # Create .env file from template
+   make config
+   
+   # Edit .env file with your settings (especially JWT_SECRET!)
+   # Generate a secure JWT secret: openssl rand -base64 32
    ```
 
 4. **Build the project:**
@@ -183,8 +177,9 @@ This will build and start all services using Docker Compose:
 
 All data is persisted in Docker volumes, so you won't lose information when containers restart.
 
-### Makefile Commands
+### Available Commands
 
+- `make config` - Create .env file from template
 - `make install` - Install dependencies
 - `make build` - Build the project
 - `make run` - Run the project locally
@@ -209,101 +204,6 @@ All data is persisted in Docker volumes, so you won't lose information when cont
 - **[Docker](https://www.docker.com/)** - Containerization
 - **[Yarn Workspaces](https://classic.yarnpkg.com/en/docs/workspaces/)** - Monorepo management
 - **[Nginx](https://nginx.org/)** - Web server for frontend (in Docker)
-
-## Project Structure
-
-```
-StratoSafe/
-├── .github/
-│   ├── CODEOWNERS                        # GitHub code ownership configuration
-│   └── workflows/
-│       ├── build-test.yml                # Original build and test workflow
-│       ├── build-test-mfa.yml            # New MFA-aware build and test workflow
-│       ├── docker-publish.yml            # Docker build and publish workflow
-│       └── lint.yml                      # Linting workflow
-│
-├── backend/
-│   ├── src/
-│   │   ├── controllers/
-│   │   │   ├── fileController.ts         # File upload and management
-│   │   │   ├── mfaController.ts          # New MFA operations controller
-│   │   │   └── userController.ts         # User auth (updated for MFA)
-│   │   │
-│   │   ├── middlewares/
-│   │   │   └── authMiddleware.ts         # JWT authentication middleware
-│   │   │
-│   │   ├── models/
-│   │   │   ├── File.ts                   # File entity model
-│   │   │   └── User.ts                   # User entity model (updated for MFA)
-│   │   │
-│   │   ├── routes/
-│   │   │   ├── fileRoutes.ts             # File API routes
-│   │   │   └── userRoutes.ts             # User API routes (updated for MFA)
-│   │   │
-│   │   ├── services/
-│   │   │   └── MfaService.ts             # New TOTP & backup code service
-│   │   │
-│   │   ├── types/
-│   │   │   └── express-multer.d.ts       # TypeScript definitions for multer
-│   │   │
-│   │   ├── data-source.ts                # TypeORM database connection
-│   │   └── server.ts                     # Express server entry point
-│   │
-│   ├── Dockerfile                        # Updated for MFA dependencies
-│   ├── init-db.sh                        # Database initialization script
-│   ├── package.json                      # Updated with MFA dependencies
-│   ├── tsconfig.build.json               # TypeScript build config
-│   └── tsconfig.json                     # TypeScript config
-│
-├── frontend/
-│   ├── public/
-│   │   └── index.html                    # HTML entry point
-│   │
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── AccountSecurity.tsx       # New security settings component
-│   │   │   ├── BackupCodes.tsx           # New backup codes component
-│   │   │   ├── FileList.tsx              # File browser component
-│   │   │   ├── FileUpload.tsx            # File upload component
-│   │   │   ├── Layout.tsx                # Updated app layout with security link
-│   │   │   ├── MfaSetup.tsx              # New MFA setup component
-│   │   │   ├── MfaVerification.tsx       # New MFA verification component
-│   │   │   └── ProtectedRoute.tsx        # Auth protection wrapper
-│   │   │
-│   │   ├── context/
-│   │   │   └── AuthContext.tsx           # Updated auth context with MFA
-│   │   │
-│   │   ├── pages/
-│   │   │   ├── Dashboard.tsx             # Main app dashboard
-│   │   │   ├── Login.tsx                 # Updated login with MFA flow
-│   │   │   └── Register.tsx              # User registration
-│   │   │
-│   │   ├── services/
-│   │   │   └── api.ts                    # Updated API service with MFA endpoints
-│   │   │
-│   │   ├── utils/
-│   │   │   └── theme.ts                  # Material UI theme config
-│   │   │
-│   │   ├── App.tsx                       # Updated main app component with MFA routes
-│   │   ├── index.css                     # Global styles
-│   │   └── index.tsx                     # React entry point
-│   │
-│   ├── package.json                      # Frontend dependencies
-│   └── tsconfig.json                     # TypeScript config
-│
-├── tests/
-│   ├── simulate-github-action.sh         # GitHub Actions local simulation
-│   ├── test-hcp-all.sh                   # HCP API tests
-│   ├── test-hcp-auth.sh                  # HCP Auth tests
-│   ├── test-hcp-secrets.sh               # HCP Secrets tests
-│   └── test-hcp-secrets-alt.sh           # Alternative HCP Secrets tests
-│
-├── docker-compose.yml                    # Docker Compose configuration
-├── Dockerfile                            # Combined service Dockerfile
-├── Makefile                              # Project build commands
-├── README.md                             # Project documentation
-└── package.json                          # Root package.json for the monorepo
-```
 
 ## Contributing
 

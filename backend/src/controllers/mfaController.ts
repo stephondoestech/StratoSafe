@@ -201,9 +201,15 @@ export const verifyMfaToken = async (req: Request, res: Response): Promise<void>
     }
     
     // Generate JWT token
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET environment variable is required');
+      res.status(500).json({ message: 'Server configuration error' });
+      return;
+    }
+
     const jwtToken = jwt.sign(
       { id: user.id, email: user.email },
-      process.env.JWT_SECRET || "supersecretkey123",
+      process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
     

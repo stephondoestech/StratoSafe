@@ -29,6 +29,13 @@ export class MfaService {
   }
 
   /**
+   * Generate a TOTP token for testing purposes
+   */
+  static generateToken(secret: string): string {
+    return authenticator.generate(secret);
+  }
+
+  /**
    * Verify a TOTP token against a user's secret
    */
   static verifyToken(token: string, secret: string): boolean {

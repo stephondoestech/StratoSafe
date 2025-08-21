@@ -142,3 +142,4 @@ tests/.env.bak
 
 # AI generated code
 CLAUDE.md
+yarn.lock

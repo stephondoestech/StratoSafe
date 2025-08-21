@@ -26,7 +26,13 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
     const token = authHeader.split(" ")[1];
     
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "supersecretkey123") as { id: string; email: string };
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET environment variable is required');
+      res.status(500).json({ message: 'Server configuration error' });
+      return;
+    }
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as { id: string; email: string };
     
     // Set user in request
     req.user = decoded;

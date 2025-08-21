@@ -1,6 +1,8 @@
 services:
   postgres:
     image: postgres:15
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: ${DB_USERNAME:-stratosafe_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-stratosafe_password}
@@ -29,14 +31,11 @@ services:
         - JWT_SECRET=${JWT_SECRET:-supersecretkey123}
     ports:
       - "${PORT:-3001}:${PORT:-3001}"
+    env_file:
+      - .env
     environment:
-      - PORT=${PORT:-3001}
-      - JWT_SECRET=${JWT_SECRET:-supersecretkey123}
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USERNAME=${DB_USERNAME:-stratosafe_user}
-      - DB_PASSWORD=${DB_PASSWORD:-stratosafe_password}
-      - DB_DATABASE=${DB_DATABASE:-stratosafe}
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,6 +56,8 @@ services:
     build: ./frontend
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     depends_on:
       - backend
     networks:

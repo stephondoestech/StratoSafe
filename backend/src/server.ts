@@ -1,24 +1,33 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
-import * as dotenv from "dotenv";
 import { AppDataSource } from "./data-source";
 import userRoutes from "./routes/userRoutes";
 import fileRoutes from "./routes/fileRoutes";
 import * as path from "path";
 import rateLimit from "express-rate-limit";
 import { getGlobalSettings } from "./controllers/systemSettingsController";
-
-// Load environment variables
-dotenv.config();
+import { config } from "./config/environment";
+import { logger } from "./utils/logger";
+import { errorHandler } from "./middlewares/errorMiddleware";
 
 // Initialize express app
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = config.PORT;
 
-// Rate limiter middleware
+// Enhanced rate limiter middleware
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // max 100 requests per windowMs
+  max: config.NODE_ENV === 'production' ? 100 : 1000, // More restrictive in production
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Custom key generator to rate limit per user when authenticated
+  keyGenerator: (req) => {
+    return req.user?.id || req.ip;
+  },
 });
 
 // Middleware
@@ -28,15 +37,23 @@ app.use(limiter);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', timestamp: new Date() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date(),
+    environment: config.NODE_ENV,
+    version: '1.0.0'
+  });
 });
 
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/files", fileRoutes);
 
+// Error handling middleware (must be last)
+app.use(errorHandler);
+
 // Serve static files in production
-if (process.env.NODE_ENV === "production") {
+if (config.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../../frontend/build")));
   
   app.get("*", (req: Request, res: Response) => {
@@ -48,23 +65,27 @@ if (process.env.NODE_ENV === "production") {
 const startServer = async () => {
   try {
     await AppDataSource.initialize();
-    console.log("Data Source has been initialized!");
+    logger.info("Database connection initialized successfully");
     
     // Initialize global settings
     await getGlobalSettings();
-    console.log("System settings initialized");
+    logger.info("System settings initialized");
     
     // Start server
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      logger.info(`🚀 Server running on port ${PORT} in ${config.NODE_ENV} mode`);
     });
   } catch (error) {
-    console.error("Error during Data Source initialization:", error);
+    logger.error("Failed to initialize database connection", { error });
     
-    // Start server even if database connection fails
-    // This allows the frontend to work and show appropriate error messages
+    if (config.NODE_ENV === 'production') {
+      // In production, exit on database failure
+      process.exit(1);
+    }
+    
+    // In development, start server without database for debugging
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT} (without database connection)`);
+      logger.warn(`⚠️ Server running on port ${PORT} WITHOUT database connection`);
     });
   }
 };
