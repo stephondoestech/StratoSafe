@@ -124,6 +124,10 @@ Then open **http://localhost:3000** in your browser to get started!
    # Edit .env file with your settings (especially JWT_SECRET!)
    # Generate a secure JWT secret: openssl rand -base64 32
    ```
+   Key settings:
+   - `JWT_SECRET` (required, 32+ chars)
+   - DB connection (`DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`) — server will exit if the database is unreachable.
+   - Upload limits: `UPLOAD_MAX_SIZE_MB` (default 10) and `UPLOAD_ALLOWED_MIME` (CSV list of allowed MIME types).
 
 4. **Build the project:**
    ```bash
