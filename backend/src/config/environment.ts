@@ -26,6 +26,11 @@ interface EnvironmentConfig {
   
   // Optional
   LOG_LEVEL?: 'error' | 'warn' | 'info' | 'debug';
+
+  // Upload constraints
+  UPLOAD_MAX_SIZE_MB: number;
+  UPLOAD_MAX_SIZE_BYTES: number;
+  UPLOAD_ALLOWED_MIME: string[];
 }
 
 class ConfigError extends Error {
@@ -76,6 +81,21 @@ const validateAndGetConfig = (): EnvironmentConfig => {
     );
   }
 
+  // Upload configuration
+  const uploadMaxSizeMb = parseInt(process.env.UPLOAD_MAX_SIZE_MB || '10', 10);
+  if (Number.isNaN(uploadMaxSizeMb) || uploadMaxSizeMb <= 0) {
+    throw new ConfigError('UPLOAD_MAX_SIZE_MB must be a positive integer (megabytes).');
+  }
+
+  const uploadAllowedMime = (process.env.UPLOAD_ALLOWED_MIME || 'image/png,image/jpeg,application/pdf,application/zip,text/plain')
+    .split(',')
+    .map((mime) => mime.trim())
+    .filter(Boolean);
+
+  if (!uploadAllowedMime.length) {
+    throw new ConfigError('UPLOAD_ALLOWED_MIME must include at least one MIME type.');
+  }
+
   return {
     PORT: parseInt(process.env.PORT || '3001', 10),
     NODE_ENV: nodeEnv as 'development' | 'production' | 'test',
@@ -87,6 +107,9 @@ const validateAndGetConfig = (): EnvironmentConfig => {
     DB_DATABASE: process.env.DB_DATABASE!,
     DB_SSL: process.env.DB_SSL === 'true',
     LOG_LEVEL: process.env.LOG_LEVEL as 'error' | 'warn' | 'info' | 'debug' || 'info',
+    UPLOAD_MAX_SIZE_MB: uploadMaxSizeMb,
+    UPLOAD_MAX_SIZE_BYTES: uploadMaxSizeMb * 1024 * 1024,
+    UPLOAD_ALLOWED_MIME: uploadAllowedMime,
   };
 };
 

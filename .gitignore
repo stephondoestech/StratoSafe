@@ -141,5 +141,6 @@ frontend/.DS_Store
 tests/.env.bak
 
 # AI generated code
-CLAUDE.md
 yarn.lock
+AGENTS.md
+TODO.md

@@ -4,6 +4,7 @@ import { authMiddleware } from "../middlewares/authMiddleware";
 import multer from "multer";
 import * as path from "path";
 import * as fs from "fs";
+import { config } from "../config/environment";
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, "../../uploads");
@@ -17,11 +18,22 @@ const storage = multer.diskStorage({
     cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
+    const originalName = path.basename(file.originalname);
+    const sanitizedName = originalName.replace(/[^a-zA-Z0-9._-]/g, "_");
+    cb(null, `${Date.now()}-${sanitizedName}`);
   }
 });
 
-const upload = multer({ storage });
+const upload = multer({ 
+  storage,
+  limits: { fileSize: config.UPLOAD_MAX_SIZE_BYTES },
+  fileFilter: (req, file, cb) => {
+    if (!config.UPLOAD_ALLOWED_MIME.includes(file.mimetype)) {
+      return cb(new Error(`Unsupported file type: ${file.mimetype}`));
+    }
+    cb(null, true);
+  }
+});
 
 const router = Router();
 

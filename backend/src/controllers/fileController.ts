@@ -4,6 +4,7 @@ import { File } from "../models/File";
 import { User } from "../models/User";
 import * as fs from "fs";
 import * as path from "path";
+import { config } from "../config/environment";
 
 const fileRepository = AppDataSource.getRepository(File);
 const userRepository = AppDataSource.getRepository(User);
@@ -85,7 +86,13 @@ export const downloadFile = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Send file
+    if (!config.UPLOAD_ALLOWED_MIME.includes(file.mimeType)) {
+      res.status(403).json({ message: "File type is not allowed for download" });
+      return;
+    }
+
+    // Send file with preserved content type
+    res.type(file.mimeType);
     res.download(file.path, file.originalName);
   } catch (error) {
     console.error("Error downloading file:", error);

@@ -78,15 +78,10 @@ const startServer = async () => {
   } catch (error) {
     logger.error("Failed to initialize database connection", { error });
     
-    if (config.NODE_ENV === 'production') {
-      // In production, exit on database failure
+    // In all environments except tests, exit on database failure
+    if (config.NODE_ENV !== 'test') {
       process.exit(1);
     }
-    
-    // In development, start server without database for debugging
-    app.listen(PORT, () => {
-      logger.warn(`⚠️ Server running on port ${PORT} WITHOUT database connection`);
-    });
   }
 };
 
