@@ -6,6 +6,9 @@
     "backend",
     "frontend"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "concurrently \"yarn workspace stratosafe-backend start\" \"yarn workspace stratosafe-frontend start\"",
     "build": "yarn workspace stratosafe-backend build && yarn workspace stratosafe-frontend build",

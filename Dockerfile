@@ -1,4 +1,4 @@
-FROM node:18-alpine AS base
+FROM node:22-alpine AS base
 
 # Install dependencies required for both services
 RUN apk add --no-cache tini curl nginx

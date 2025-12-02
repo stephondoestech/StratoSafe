@@ -96,7 +96,7 @@ Then open **http://localhost:3000** in your browser to get started!
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v16 or later)
+- [Node.js](https://nodejs.org/) (v22 or later recommended)
 - [Yarn](https://yarnpkg.com/)
 - [Docker & Docker Compose](https://docs.docker.com/compose/install/) (for containerized deployment)
 - [PostgreSQL](https://www.postgresql.org/) (if running locally without Docker)
