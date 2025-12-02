@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import { File } from "./File";
 import * as bcrypt from "bcrypt";
+import * as crypto from "crypto";
 
 // Define possible user roles
 export enum UserRole {
@@ -64,20 +65,20 @@ export class User {
   }
 
   // Method to generate backup codes
-  generateBackupCodes(): string[] {
+  async generateBackupCodes(): Promise<string[]> {
     const codes: string[] = [];
     for (let i = 0; i < 10; i++) {
-      // Generate a random 8-character alphanumeric code
-      const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+      // Generate 8-character uppercase hex from cryptographically secure bytes
+      const code = crypto.randomBytes(4).toString("hex").toUpperCase();
       codes.push(code);
     }
     // Store hashed backup codes
-    this.storeBackupCodes(codes);
+    await this.storeBackupCodes(codes);
     return codes;
   }
 
   // Store backup codes as hashed values
-  private async storeBackupCodes(codes: string[]) {
+  private async storeBackupCodes(codes: string[]): Promise<void> {
     const hashedCodes = await Promise.all(
       codes.map(async (code) => await bcrypt.hash(code, 10))
     );

@@ -299,7 +299,7 @@ describe('MFA Controller', () => {
       // Setup MFA-enabled user
       testUser.mfaEnabled = true;
       testUser.mfaSecret = MfaService.generateSecret(testUser.email);
-      const backupCodes = testUser.generateBackupCodes();
+      const backupCodes = await testUser.generateBackupCodes();
       await userRepository.save(testUser);
     });
 

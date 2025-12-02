@@ -56,7 +56,7 @@ export class MfaService {
     }
 
     // Generate backup codes
-    user.generateBackupCodes();
+    await user.generateBackupCodes();
     
     // Enable MFA
     user.mfaEnabled = true;

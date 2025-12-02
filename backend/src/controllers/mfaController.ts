@@ -153,7 +153,7 @@ export const generateBackupCodes = async (req: Request, res: Response): Promise<
     }
     
     // Generate new backup codes
-    const codes = user.generateBackupCodes();
+    const codes = await user.generateBackupCodes();
     
     // Save the user with new backup codes
     await userRepository.save(user);
