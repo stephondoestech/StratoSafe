@@ -64,8 +64,8 @@ docker compose up --build
    - `DB_HOST`, `DB_PORT` (5432), `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`  
    - `JWT_SECRET` (32+ chars, required)  
    - Optional: `UPLOAD_MAX_SIZE_MB`, `UPLOAD_ALLOWED_MIME`, `LOG_LEVEL`  
-3) Volume mapping: host `/mnt/user/appdata/stratosafe/uploads` → container `/app/uploads` to persist uploads.  
-4) Port mapping: container 3001 → your chosen host port. The bundled frontend serves from the same container and proxies `/api` to the backend.  
+3) Volume mapping: host `/mnt/user/appdata/stratosafe/uploads` → container `/app/backend/uploads` to persist uploads.  
+4) Port mapping: container 3001 → your chosen host port. The bundled frontend is served from the same container and proxies `/api` to the backend.  
 5) Apply to start the container, then visit `http://<unraid-ip>:<host-port>` in your browser; verify signup/login and uploads.  
 
 ## Security Notes
