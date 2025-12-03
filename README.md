@@ -57,6 +57,17 @@ make docker          # build + run all services
 docker compose up --build
 ```
 
+## Unraid (CA Apps, single image)
+1) In Unraid, open Community Apps, search for “StratoSafe”, and click Install. The template deploys the combined image (backend + frontend).  
+2) Set template variables:  
+   - `PORT` (container listens on 3001; map to your desired host port)  
+   - `DB_HOST`, `DB_PORT` (5432), `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`  
+   - `JWT_SECRET` (32+ chars, required)  
+   - Optional: `UPLOAD_MAX_SIZE_MB`, `UPLOAD_ALLOWED_MIME`, `LOG_LEVEL`  
+3) Volume mapping: host `/mnt/user/appdata/stratosafe/uploads` → container `/app/uploads` to persist uploads.  
+4) Port mapping: container 3001 → your chosen host port. The bundled frontend serves from the same container and proxies `/api` to the backend.  
+5) Apply to start the container, then visit `http://<unraid-ip>:<host-port>` in your browser; verify signup/login and uploads.  
+
 ## Security Notes
 - Do not commit secrets; keep `.env` local.
 - Rate limiting and JWT auth are enforced; keep `JWT_SECRET` strong and rotate when possible.

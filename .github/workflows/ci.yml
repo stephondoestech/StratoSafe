@@ -4,15 +4,14 @@ on:
   push:
     branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '22'
   REGISTRY: docker.io
   IMAGE_NAME: stratosafe
 
 jobs:
-  # Code Quality & Security Checks
   quality:
     name: 🔍 Code Quality & Security
     runs-on: ubuntu-latest
@@ -29,36 +28,34 @@ jobs:
       - name: 📦 Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: 🔒 Security audit
-        run: yarn audit --level moderate
-        continue-on-error: true
-
       - name: 🧹 Lint backend
-        run: |
-          cd backend
-          yarn lint
+        run: yarn workspace stratosafe-backend lint
 
       - name: 🧹 Lint frontend
-        run: |
-          cd frontend
-          yarn lint
+        run: yarn workspace stratosafe-frontend lint
 
       - name: 🎨 Check formatting
-        run: |
-          cd backend
-          yarn format --check
+        run: yarn workspace stratosafe-backend format:check
 
-  # Backend Tests
   test-backend:
     name: 🧪 Backend Tests
     runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      CI: true
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USERNAME: ${{ secrets.DB_USERNAME || 'test_user' }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'test_password' }}
+      DB_DATABASE: ${{ secrets.DB_DATABASE || 'stratosafe_test' }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-jwt-secret-for-ci-only' }}
     services:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_USER: test_user
-          POSTGRES_DB: stratosafe_test
+          POSTGRES_PASSWORD: ${{ env.DB_PASSWORD }}
+          POSTGRES_USER: ${{ env.DB_USERNAME }}
+          POSTGRES_DB: ${{ env.DB_DATABASE }}
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -81,25 +78,14 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: 🧪 Run backend tests
-        run: |
-          cd backend
-          yarn test --coverage
-        env:
-          NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USERNAME: test_user
-          DB_PASSWORD: test_password
-          DB_DATABASE: stratosafe_test
-          JWT_SECRET: test-jwt-secret-for-ci-only
+        run: yarn workspace stratosafe-backend test:coverage
 
       - name: 📊 Upload coverage
         uses: codecov/codecov-action@v3
         with:
-          file: backend/coverage/lcov.info
+          files: backend/coverage/lcov.info
           fail_ci_if_error: true
 
-  # Frontend Tests
   test-frontend:
     name: 🧪 Frontend Tests
     runs-on: ubuntu-latest
@@ -117,11 +103,10 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: 🧪 Run frontend tests
-        run: |
-          cd frontend
-          yarn test --coverage --watchAll=false
+        run: yarn workspace stratosafe-frontend test --coverage --watchAll=false
+        env:
+          CI: true
 
-  # Build & Deploy
   build:
     name: 🏗️ Build & Deploy
     needs: [quality, test-backend, test-frontend]
