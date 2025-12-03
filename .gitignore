@@ -129,6 +129,7 @@ dist
 .vscode-test
 
 # yarn v2
+yarn.lock
 .yarn/cache
 .yarn/unplugged
 .yarn/build-state.yml
@@ -141,6 +142,5 @@ frontend/.DS_Store
 tests/.env.bak
 
 # AI generated code
-yarn.lock
 AGENTS.md
 TODO.md
