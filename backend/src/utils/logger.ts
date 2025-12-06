@@ -32,7 +32,7 @@ const formatMessage = (level: string, message: string, meta?: unknown): string =
     timestamp,
     level,
     message,
-    ...(meta && { meta }),
+    ...(meta !== undefined && meta !== null && typeof meta === 'object' ? { meta } : {}),
   };
 
   return JSON.stringify(logEntry);

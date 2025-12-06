@@ -3,6 +3,7 @@
  * Tests complete user workflows end-to-end
  */
 
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
 import path from 'path';

@@ -59,11 +59,20 @@ const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   );
 };
 
+const getHiddenFileInput = (): HTMLInputElement => {
+  const input = screen.getByRole('button', { name: /select file/i }).querySelector('input');
+  if (!input) {
+    throw new Error('File input not found');
+  }
+  return input as HTMLInputElement;
+};
+
 describe('FileUpload Component', () => {
   const mockOnUploadSuccess = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   it('should render file upload form', () => {
@@ -73,8 +82,8 @@ describe('FileUpload Component', () => {
       </TestWrapper>
     );
 
-    expect(screen.getByText(/upload file/i)).toBeInTheDocument();
-    expect(screen.getByText(/choose file/i)).toBeInTheDocument();
+    expect(screen.getByText(/upload new file/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /select file/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
   });
 
@@ -103,7 +112,7 @@ describe('FileUpload Component', () => {
     const file = new File(['test content'], 'test.txt', { type: 'text/plain' });
     
     // Simulate file selection
-    const fileInput = screen.getByLabelText(/choose file/i);
+    const fileInput = getHiddenFileInput();
     await user.upload(fileInput, file);
 
     // Add description
@@ -146,35 +155,31 @@ describe('FileUpload Component', () => {
     );
 
     const file = new File(['test content'], 'test.txt', { type: 'text/plain' });
-    const fileInput = screen.getByLabelText(/choose file/i);
+    const fileInput = getHiddenFileInput();
     
     await user.upload(fileInput, file);
     await user.click(screen.getByRole('button', { name: /upload/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/file upload failed/i)).toBeInTheDocument();
+      expect(screen.getByText(/failed to upload file/i)).toBeInTheDocument();
     });
 
     expect(mockOnUploadSuccess).not.toHaveBeenCalled();
   });
 
-  it('should validate file selection', async () => {
-    const user = userEvent.setup();
-    
+  it('disables upload button until a file is selected', async () => {
     render(
       <TestWrapper>
         <FileUpload onUploadSuccess={mockOnUploadSuccess} />
       </TestWrapper>
     );
 
-    // Try to upload without selecting a file
-    await user.click(screen.getByRole('button', { name: /upload/i }));
+    expect(screen.getByRole('button', { name: /upload/i })).toBeDisabled();
 
-    await waitFor(() => {
-      expect(screen.getByText(/please select a file/i)).toBeInTheDocument();
-    });
+    const user = userEvent.setup();
+    await user.upload(getHiddenFileInput(), new File(['test'], 'file.txt', { type: 'text/plain' }));
 
-    expect(mockedApi.fileService.uploadFile).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /upload/i })).toBeEnabled();
   });
 
   it('should show upload progress', async () => {
@@ -197,14 +202,14 @@ describe('FileUpload Component', () => {
     );
 
     const file = new File(['test content'], 'test.txt', { type: 'text/plain' });
-    const fileInput = screen.getByLabelText(/choose file/i);
+    const fileInput = getHiddenFileInput();
     
     await user.upload(fileInput, file);
     await user.click(screen.getByRole('button', { name: /upload/i }));
 
     // Should show uploading state
-    expect(screen.getByText(/uploading/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /uploading/i })).toBeDisabled();
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /upload/i })).toBeDisabled();
 
     // Wait for completion
     await waitFor(() => {
@@ -225,7 +230,7 @@ describe('FileUpload Component', () => {
     const largeContent = 'x'.repeat(11 * 1024 * 1024); // 11MB
     const largeFile = new File([largeContent], 'large-file.txt', { type: 'text/plain' });
     
-    const fileInput = screen.getByLabelText(/choose file/i);
+    const fileInput = getHiddenFileInput();
     await user.upload(fileInput, largeFile);
 
     // Should show file size warning (if implemented)
@@ -248,7 +253,7 @@ describe('FileUpload Component', () => {
     );
 
     const file = new File(['test content'], 'test.txt', { type: 'text/plain' });
-    const fileInput = screen.getByLabelText(/choose file/i);
+    const fileInput = getHiddenFileInput();
     const descriptionInput = screen.getByLabelText(/description/i);
     
     await user.upload(fileInput, file);
@@ -262,7 +267,7 @@ describe('FileUpload Component', () => {
     // Form should be cleared
     await waitFor(() => {
       expect(descriptionInput).toHaveValue('');
-      expect(fileInput.files).toHaveLength(0);
+      expect(screen.queryByText(/selected:/i)).not.toBeInTheDocument();
     });
   });
 });

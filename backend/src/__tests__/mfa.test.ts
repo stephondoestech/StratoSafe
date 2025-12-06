@@ -3,6 +3,7 @@
  * Tests Multi-Factor Authentication setup, verification, and backup codes
  */
 
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
 import {

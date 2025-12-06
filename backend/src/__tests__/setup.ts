@@ -3,6 +3,8 @@
  * Runs before all test suites
  */
 
+import { jest, describe, it, expect } from '@jest/globals';
+
 // Mock environment variables for testing BEFORE importing any modules
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-jwt-secret-for-testing-only-minimum-32-characters-long';

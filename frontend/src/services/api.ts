@@ -1,4 +1,5 @@
-import axios from 'axios';
+// Use CommonJS build of axios to avoid Jest ESM transform issues in CRA
+import axios from 'axios/dist/node/axios.cjs';
 
 const API_URL =
   process.env.REACT_APP_API_URL ||
