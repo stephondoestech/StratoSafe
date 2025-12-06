@@ -38,7 +38,6 @@ const formatMessage = (level: string, message: string, meta?: unknown): string =
   return JSON.stringify(logEntry);
 };
 
-/* eslint-disable no-console */
 export const logger = {
   error: (message: string, error?: unknown): void => {
     if (shouldLog(LOG_LEVEL.ERROR)) {
