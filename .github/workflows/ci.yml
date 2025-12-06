@@ -86,13 +86,6 @@ jobs:
       - name: Run backend tests
         run: yarn workspace stratosafe-backend test:coverage
 
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          files: backend/coverage/lcov.info
-          fail_ci_if_error: true
-          flags: backend
-
   test-frontend:
     name: Frontend Tests
     runs-on: ubuntu-latest
