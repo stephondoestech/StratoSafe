@@ -5,13 +5,13 @@
 
 import request from 'supertest';
 import express from 'express';
-import { 
-  generateMfaSetup, 
-  verifyAndEnableMfa, 
-  disableMfa, 
-  getMfaStatus, 
+import {
+  generateMfaSetup,
+  verifyAndEnableMfa,
+  disableMfa,
+  getMfaStatus,
   generateBackupCodes,
-  verifyMfaToken 
+  verifyMfaToken,
 } from '../controllers/mfaController';
 import { authMiddleware } from '../middlewares/authMiddleware';
 import { errorHandler } from '../middlewares/errorMiddleware';
@@ -24,7 +24,7 @@ import * as jwt from 'jsonwebtoken';
 const createTestApp = () => {
   const app = express();
   app.use(express.json());
-  
+
   // Setup MFA routes
   app.get('/mfa/setup', authMiddleware, generateMfaSetup);
   app.post('/mfa/enable', authMiddleware, verifyAndEnableMfa);
@@ -32,9 +32,9 @@ const createTestApp = () => {
   app.get('/mfa/status', authMiddleware, getMfaStatus);
   app.post('/mfa/backup-codes', authMiddleware, generateBackupCodes);
   app.post('/verify-mfa', verifyMfaToken);
-  
+
   app.use(errorHandler);
-  
+
   return app;
 };
 
@@ -46,7 +46,7 @@ describe('MFA Controller', () => {
 
   beforeAll(async () => {
     app = createTestApp();
-    
+
     try {
       if (!AppDataSource.isInitialized) {
         await AppDataSource.initialize();
@@ -55,16 +55,16 @@ describe('MFA Controller', () => {
       console.warn('Database not available for testing, skipping MFA tests');
       return;
     }
-    
+
     userRepository = AppDataSource.getRepository(User);
   });
 
   beforeEach(async () => {
     if (!AppDataSource.isInitialized) return;
-    
+
     // Clean up
     await userRepository.delete({});
-    
+
     // Create test user
     testUser = new User();
     testUser.email = 'test@example.com';
@@ -74,13 +74,11 @@ describe('MFA Controller', () => {
     testUser.role = UserRole.USER;
     await testUser.hashPassword();
     testUser = await userRepository.save(testUser);
-    
+
     // Generate auth token
-    authToken = jwt.sign(
-      { id: testUser.id, email: testUser.email },
-      process.env.JWT_SECRET!,
-      { expiresIn: '1h' }
-    );
+    authToken = jwt.sign({ id: testUser.id, email: testUser.email }, process.env.JWT_SECRET!, {
+      expiresIn: '1h',
+    });
   });
 
   afterAll(async () => {
@@ -92,7 +90,7 @@ describe('MFA Controller', () => {
   describe('GET /mfa/setup', () => {
     it('should generate MFA setup data', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .get('/mfa/setup')
         .set('Authorization', `Bearer ${authToken}`)
@@ -106,19 +104,14 @@ describe('MFA Controller', () => {
 
     it('should require authentication', async () => {
       if (!AppDataSource.isInitialized) return;
-      
-      await request(app)
-        .get('/mfa/setup')
-        .expect(401);
+
+      await request(app).get('/mfa/setup').expect(401);
     });
 
     it('should store secret temporarily', async () => {
       if (!AppDataSource.isInitialized) return;
-      
-      await request(app)
-        .get('/mfa/setup')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
+
+      await request(app).get('/mfa/setup').set('Authorization', `Bearer ${authToken}`).expect(200);
 
       const updatedUser = await userRepository.findOne({ where: { id: testUser.id } });
       expect(updatedUser.mfaSecret).toBeDefined();
@@ -129,22 +122,20 @@ describe('MFA Controller', () => {
   describe('POST /mfa/enable', () => {
     beforeEach(async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Setup MFA secret first
-      await request(app)
-        .get('/mfa/setup')
-        .set('Authorization', `Bearer ${authToken}`);
+      await request(app).get('/mfa/setup').set('Authorization', `Bearer ${authToken}`);
     });
 
     it('should enable MFA with valid token', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Get the user with the secret
       const userWithSecret = await userRepository.findOne({ where: { id: testUser.id } });
-      
+
       // Generate a valid TOTP token
       const validToken = MfaService.generateToken(userWithSecret.mfaSecret);
-      
+
       const response = await request(app)
         .post('/mfa/enable')
         .set('Authorization', `Bearer ${authToken}`)
@@ -158,7 +149,7 @@ describe('MFA Controller', () => {
 
     it('should reject invalid token', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .post('/mfa/enable')
         .set('Authorization', `Bearer ${authToken}`)
@@ -170,7 +161,7 @@ describe('MFA Controller', () => {
 
     it('should require token', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .post('/mfa/enable')
         .set('Authorization', `Bearer ${authToken}`)
@@ -184,7 +175,7 @@ describe('MFA Controller', () => {
   describe('POST /mfa/disable', () => {
     beforeEach(async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Enable MFA first
       testUser.mfaEnabled = true;
       testUser.mfaSecret = 'test-secret';
@@ -194,7 +185,7 @@ describe('MFA Controller', () => {
 
     it('should disable MFA successfully', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .post('/mfa/disable')
         .set('Authorization', `Bearer ${authToken}`)
@@ -212,17 +203,15 @@ describe('MFA Controller', () => {
 
     it('should require authentication', async () => {
       if (!AppDataSource.isInitialized) return;
-      
-      await request(app)
-        .post('/mfa/disable')
-        .expect(401);
+
+      await request(app).post('/mfa/disable').expect(401);
     });
   });
 
   describe('GET /mfa/status', () => {
     it('should return MFA status when disabled', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .get('/mfa/status')
         .set('Authorization', `Bearer ${authToken}`)
@@ -234,7 +223,7 @@ describe('MFA Controller', () => {
 
     it('should return MFA status when enabled', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Enable MFA
       testUser.mfaEnabled = true;
       testUser.mfaSecret = 'test-secret';
@@ -254,7 +243,7 @@ describe('MFA Controller', () => {
   describe('POST /mfa/backup-codes', () => {
     beforeEach(async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Enable MFA first
       testUser.mfaEnabled = true;
       testUser.mfaSecret = 'test-secret';
@@ -263,7 +252,7 @@ describe('MFA Controller', () => {
 
     it('should generate backup codes when MFA is enabled', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .post('/mfa/backup-codes')
         .set('Authorization', `Bearer ${authToken}`)
@@ -278,7 +267,7 @@ describe('MFA Controller', () => {
 
     it('should reject when MFA is not enabled', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Disable MFA
       testUser.mfaEnabled = false;
       await userRepository.save(testUser);
@@ -295,7 +284,7 @@ describe('MFA Controller', () => {
   describe('POST /verify-mfa', () => {
     beforeEach(async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Setup MFA-enabled user
       testUser.mfaEnabled = true;
       testUser.mfaSecret = MfaService.generateSecret(testUser.email);
@@ -305,15 +294,15 @@ describe('MFA Controller', () => {
 
     it('should verify valid TOTP token', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const validToken = MfaService.generateToken(testUser.mfaSecret!);
-      
+
       const response = await request(app)
         .post('/verify-mfa')
         .send({
           email: testUser.email,
           token: validToken,
-          isBackupCode: false
+          isBackupCode: false,
         })
         .expect(200);
 
@@ -325,33 +314,33 @@ describe('MFA Controller', () => {
 
     it('should verify valid backup code', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Get the generated backup codes
       const userWithCodes = await userRepository.findOne({ where: { id: testUser.id } });
       const backupCodes = JSON.parse(userWithCodes.mfaBackupCodes);
-      
+
       // Use the first backup code (we need the plain text version)
       // For testing, we'll simulate a known backup code
       const testBackupCode = 'TESTCODE1';
-      
+
       // Manually set a known backup code for testing
       const bcrypt = require('bcrypt');
       const hashedTestCode = await bcrypt.hash(testBackupCode, 10);
       userWithCodes.mfaBackupCodes = JSON.stringify([hashedTestCode]);
       await userRepository.save(userWithCodes);
-      
+
       const response = await request(app)
         .post('/verify-mfa')
         .send({
           email: testUser.email,
           token: testBackupCode,
-          isBackupCode: true
+          isBackupCode: true,
         })
         .expect(200);
 
       expect(response.body.user).toBeDefined();
       expect(response.body.token).toBeDefined();
-      
+
       // Verify backup code was consumed
       const updatedUser = await userRepository.findOne({ where: { id: testUser.id } });
       const remainingCodes = JSON.parse(updatedUser.mfaBackupCodes);
@@ -360,13 +349,13 @@ describe('MFA Controller', () => {
 
     it('should reject invalid TOTP token', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .post('/verify-mfa')
         .send({
           email: testUser.email,
           token: '123456', // Invalid token
-          isBackupCode: false
+          isBackupCode: false,
         })
         .expect(401);
 
@@ -375,13 +364,13 @@ describe('MFA Controller', () => {
 
     it('should reject invalid backup code', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .post('/verify-mfa')
         .send({
           email: testUser.email,
           token: 'INVALID_CODE',
-          isBackupCode: true
+          isBackupCode: true,
         })
         .expect(401);
 
@@ -390,13 +379,13 @@ describe('MFA Controller', () => {
 
     it('should reject unknown user', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .post('/verify-mfa')
         .send({
           email: 'unknown@example.com',
           token: '123456',
-          isBackupCode: false
+          isBackupCode: false,
         })
         .expect(404);
 

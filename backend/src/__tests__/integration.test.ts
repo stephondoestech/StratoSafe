@@ -22,11 +22,11 @@ import rateLimit from 'express-rate-limit';
 // Create full app instance for integration tests
 const createApp = () => {
   const app = express();
-  
+
   // Middleware
   app.use(cors());
   app.use(express.json());
-  
+
   // Minimal rate limiting for tests
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -34,19 +34,19 @@ const createApp = () => {
     skip: () => true, // Skip rate limiting in tests
   });
   app.use(limiter);
-  
+
   // Routes
   app.use('/api/users', userRoutes);
   app.use('/api/files', fileRoutes);
-  
+
   // Health check
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date() });
   });
-  
+
   // Error handling
   app.use(errorHandler);
-  
+
   return app;
 };
 
@@ -58,7 +58,7 @@ describe('Integration Tests', () => {
 
   beforeAll(async () => {
     app = createApp();
-    
+
     try {
       if (!AppDataSource.isInitialized) {
         await AppDataSource.initialize();
@@ -67,7 +67,7 @@ describe('Integration Tests', () => {
       console.warn('Database not available for testing, skipping integration tests');
       return;
     }
-    
+
     userRepository = AppDataSource.getRepository(User);
     fileRepository = AppDataSource.getRepository(File);
     settingsRepository = AppDataSource.getRepository(SystemSettings);
@@ -75,12 +75,12 @@ describe('Integration Tests', () => {
 
   beforeEach(async () => {
     if (!AppDataSource.isInitialized) return;
-    
+
     // Clean up all tables
     await fileRepository.delete({});
     await userRepository.delete({});
     await settingsRepository.delete({});
-    
+
     // Create default system settings
     const settings = new SystemSettings();
     settings.allowRegistration = true;
@@ -98,10 +98,8 @@ describe('Integration Tests', () => {
       if (!AppDataSource.isInitialized) return;
 
       // 1. Health check
-      const healthResponse = await request(app)
-        .get('/health')
-        .expect(200);
-      
+      const healthResponse = await request(app).get('/health').expect(200);
+
       expect(healthResponse.body.status).toBe('ok');
 
       // 2. User registration
@@ -109,7 +107,7 @@ describe('Integration Tests', () => {
         email: 'integration@example.com',
         password: 'SecurePass123!',
         firstName: 'Integration',
-        lastName: 'Test'
+        lastName: 'Test',
       };
 
       const registerResponse = await request(app)
@@ -125,7 +123,7 @@ describe('Integration Tests', () => {
         .post('/api/users/login')
         .send({
           email: userData.email,
-          password: userData.password
+          password: userData.password,
         })
         .expect(200);
 
@@ -147,7 +145,7 @@ describe('Integration Tests', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({
           firstName: 'Updated',
-          themePreference: 'dark'
+          themePreference: 'dark',
         })
         .expect(200);
 
@@ -160,7 +158,7 @@ describe('Integration Tests', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({
           currentPassword: userData.password,
-          newPassword: 'NewSecurePass456!'
+          newPassword: 'NewSecurePass456!',
         })
         .expect(200);
 
@@ -171,7 +169,7 @@ describe('Integration Tests', () => {
         .post('/api/users/login')
         .send({
           email: userData.email,
-          password: 'NewSecurePass456!'
+          password: 'NewSecurePass456!',
         })
         .expect(200);
 
@@ -186,13 +184,10 @@ describe('Integration Tests', () => {
         email: 'mfa@example.com',
         password: 'SecurePass123!',
         firstName: 'MFA',
-        lastName: 'User'
+        lastName: 'User',
       };
 
-      await request(app)
-        .post('/api/users/register')
-        .send(userData)
-        .expect(201);
+      await request(app).post('/api/users/register').send(userData).expect(201);
 
       const loginResponse = await request(app)
         .post('/api/users/login')
@@ -258,7 +253,7 @@ describe('Integration Tests', () => {
         .send({
           email: userData.email,
           token: mfaToken,
-          isBackupCode: false
+          isBackupCode: false,
         })
         .expect(200);
 
@@ -282,13 +277,10 @@ describe('Integration Tests', () => {
         email: 'fileuser@example.com',
         password: 'SecurePass123!',
         firstName: 'File',
-        lastName: 'User'
+        lastName: 'User',
       };
 
-      await request(app)
-        .post('/api/users/register')
-        .send(userData)
-        .expect(201);
+      await request(app).post('/api/users/register').send(userData).expect(201);
 
       const loginResponse = await request(app)
         .post('/api/users/login')
@@ -366,13 +358,10 @@ describe('Integration Tests', () => {
         email: 'admin@example.com',
         password: 'AdminPass123!',
         firstName: 'Admin',
-        lastName: 'User'
+        lastName: 'User',
       };
 
-      await request(app)
-        .post('/api/users/register')
-        .send(adminData)
-        .expect(201);
+      await request(app).post('/api/users/register').send(adminData).expect(201);
 
       const adminLoginResponse = await request(app)
         .post('/api/users/login')
@@ -386,7 +375,7 @@ describe('Integration Tests', () => {
         email: 'regular@example.com',
         password: 'RegularPass123!',
         firstName: 'Regular',
-        lastName: 'User'
+        lastName: 'User',
       };
 
       const userRegisterResponse = await request(app)
@@ -430,7 +419,7 @@ describe('Integration Tests', () => {
           email: 'blocked@example.com',
           password: 'BlockedPass123!',
           firstName: 'Blocked',
-          lastName: 'User'
+          lastName: 'User',
         })
         .expect(403);
 
@@ -561,9 +550,7 @@ describe('Integration Tests', () => {
         .expect(401);
 
       // Test with missing token
-      await request(app)
-        .get('/api/users/profile')
-        .expect(401);
+      await request(app).get('/api/users/profile').expect(401);
 
       // Test with expired token (simulate)
       const expiredToken = require('jsonwebtoken').sign(

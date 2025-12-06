@@ -1,9 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from "typeorm";
-import { User } from "./User";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { User } from './User';
 
 @Entity()
 export class File {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column()
@@ -21,7 +28,7 @@ export class File {
   @Column()
   path!: string;
 
-  @ManyToOne(() => User, user => user.files)
+  @ManyToOne(() => User, (user) => user.files)
   owner!: User;
 
   @Column({ nullable: true })

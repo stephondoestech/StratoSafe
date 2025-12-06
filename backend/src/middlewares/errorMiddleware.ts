@@ -45,7 +45,7 @@ export const errorHandler = (
   error: AppError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void => {
   const statusCode = error.statusCode || 500;
   const message = error.isOperational ? error.message : 'Internal server error';
@@ -70,6 +70,9 @@ export const errorHandler = (
   });
 };
 
-export const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
+type AsyncHandler = (req: Request, res: Response, next: NextFunction) => Promise<unknown> | void;
+
+export const asyncHandler =
+  (fn: AsyncHandler): AsyncHandler =>
+  (req, res, next) =>
+    Promise.resolve(fn(req, res, next)).catch(next);

@@ -5,7 +5,13 @@
 
 import request from 'supertest';
 import express from 'express';
-import { register, login, getUserProfile, updateUserProfile, changePassword } from '../controllers/userController';
+import {
+  register,
+  login,
+  getUserProfile,
+  updateUserProfile,
+  changePassword,
+} from '../controllers/userController';
 import { authMiddleware } from '../middlewares/authMiddleware';
 import { AppDataSource } from '../data-source';
 import { User, UserRole } from '../models/User';
@@ -16,17 +22,17 @@ import { errorHandler } from '../middlewares/errorMiddleware';
 const createTestApp = () => {
   const app = express();
   app.use(express.json());
-  
+
   // Setup routes
   app.post('/register', register);
   app.post('/login', login);
   app.get('/profile', authMiddleware, getUserProfile);
   app.put('/profile', authMiddleware, updateUserProfile);
   app.post('/change-password', authMiddleware, changePassword);
-  
+
   // Error handling
   app.use(errorHandler);
-  
+
   return app;
 };
 
@@ -37,7 +43,7 @@ describe('Authentication Controller', () => {
 
   beforeAll(async () => {
     app = createTestApp();
-    
+
     // Initialize test database
     try {
       if (!AppDataSource.isInitialized) {
@@ -48,18 +54,18 @@ describe('Authentication Controller', () => {
       console.warn('Database not available for testing, skipping auth tests');
       return;
     }
-    
+
     userRepository = AppDataSource.getRepository(User);
     settingsRepository = AppDataSource.getRepository(SystemSettings);
   });
 
   beforeEach(async () => {
     if (!AppDataSource.isInitialized) return;
-    
+
     // Clean up before each test
     await userRepository.delete({});
     await settingsRepository.delete({});
-    
+
     // Create default system settings to allow registration
     const settings = new SystemSettings();
     settings.allowRegistration = true;
@@ -82,11 +88,8 @@ describe('Authentication Controller', () => {
 
     it('should register a new user successfully', async () => {
       if (!AppDataSource.isInitialized) return;
-      
-      const response = await request(app)
-        .post('/register')
-        .send(validUserData)
-        .expect(201);
+
+      const response = await request(app).post('/register').send(validUserData).expect(201);
 
       expect(response.body.email).toBe(validUserData.email);
       expect(response.body.firstName).toBe(validUserData.firstName);
@@ -98,81 +101,66 @@ describe('Authentication Controller', () => {
 
     it('should make first user an admin', async () => {
       if (!AppDataSource.isInitialized) return;
-      
-      const response = await request(app)
-        .post('/register')
-        .send(validUserData)
-        .expect(201);
+
+      const response = await request(app).post('/register').send(validUserData).expect(201);
 
       expect(response.body.role).toBe(UserRole.ADMIN);
     });
 
     it('should make subsequent users regular users', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Register first user (admin)
       await request(app).post('/register').send(validUserData);
-      
+
       // Register second user
       const secondUser = {
         ...validUserData,
-        email: 'user2@example.com'
+        email: 'user2@example.com',
       };
-      
-      const response = await request(app)
-        .post('/register')
-        .send(secondUser)
-        .expect(201);
+
+      const response = await request(app).post('/register').send(secondUser).expect(201);
 
       expect(response.body.role).toBe(UserRole.USER);
     });
 
     it('should reject duplicate email registration', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       await request(app).post('/register').send(validUserData);
 
-      const response = await request(app)
-        .post('/register')
-        .send(validUserData)
-        .expect(400);
+      const response = await request(app).post('/register').send(validUserData).expect(400);
 
       expect(response.body.message).toBe('User already exists');
     });
 
     it('should reject registration when disabled', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Disable registration
       await settingsRepository.update({}, { allowRegistration: false });
 
-      const response = await request(app)
-        .post('/register')
-        .send(validUserData)
-        .expect(403);
+      const response = await request(app).post('/register').send(validUserData).expect(403);
 
       expect(response.body.message).toBe('User registration is currently disabled');
     });
 
     it('should validate required fields', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const incompleteData = {
         email: 'test@example.com',
         // Missing password, firstName, lastName
       };
 
-      await request(app)
-        .post('/register')
-        .send(incompleteData)
-        .expect(500); // Should fail due to missing fields
+      await request(app).post('/register').send(incompleteData).expect(500); // Should fail due to missing fields
     });
   });
 
   describe('POST /login', () => {
     beforeEach(async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Create a test user
       const user = new User();
       user.email = 'test@example.com';
@@ -187,7 +175,7 @@ describe('Authentication Controller', () => {
 
     it('should login with valid credentials', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .post('/login')
         .send({
@@ -204,7 +192,7 @@ describe('Authentication Controller', () => {
 
     it('should reject invalid email', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .post('/login')
         .send({
@@ -218,7 +206,7 @@ describe('Authentication Controller', () => {
 
     it('should reject invalid password', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .post('/login')
         .send({
@@ -232,7 +220,7 @@ describe('Authentication Controller', () => {
 
     it('should handle MFA-enabled users', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Enable MFA for user
       await userRepository.update(
         { email: 'test@example.com' },
@@ -259,7 +247,7 @@ describe('Authentication Controller', () => {
 
     beforeEach(async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Create and login user to get token
       const user = new User();
       user.email = 'test@example.com';
@@ -280,7 +268,7 @@ describe('Authentication Controller', () => {
 
     it('should get user profile with valid token', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .get('/profile')
         .set('Authorization', `Bearer ${authToken}`)
@@ -293,17 +281,15 @@ describe('Authentication Controller', () => {
 
     it('should reject request without token', async () => {
       if (!AppDataSource.isInitialized) return;
-      
-      const response = await request(app)
-        .get('/profile')
-        .expect(401);
+
+      const response = await request(app).get('/profile').expect(401);
 
       expect(response.body.message).toBe('Authentication required');
     });
 
     it('should reject request with invalid token', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .get('/profile')
         .set('Authorization', 'Bearer invalid-token')
@@ -318,7 +304,7 @@ describe('Authentication Controller', () => {
 
     beforeEach(async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const user = new User();
       user.email = 'test@example.com';
       user.password = 'SecurePass123!';
@@ -336,11 +322,11 @@ describe('Authentication Controller', () => {
 
     it('should update user profile', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const updateData = {
         firstName: 'Jane',
         lastName: 'Smith',
-        themePreference: 'dark'
+        themePreference: 'dark',
       };
 
       const response = await request(app)
@@ -356,7 +342,7 @@ describe('Authentication Controller', () => {
 
     it('should prevent email conflicts', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Create another user
       const otherUser = new User();
       otherUser.email = 'other@example.com';
@@ -381,7 +367,7 @@ describe('Authentication Controller', () => {
 
     beforeEach(async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const user = new User();
       user.email = 'test@example.com';
       user.password = 'SecurePass123!';
@@ -399,13 +385,13 @@ describe('Authentication Controller', () => {
 
     it('should change password with valid current password', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .post('/change-password')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           currentPassword: 'SecurePass123!',
-          newPassword: 'NewSecurePass456!'
+          newPassword: 'NewSecurePass456!',
         })
         .expect(200);
 
@@ -415,13 +401,13 @@ describe('Authentication Controller', () => {
 
     it('should reject invalid current password', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .post('/change-password')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           currentPassword: 'WrongPassword',
-          newPassword: 'NewSecurePass456!'
+          newPassword: 'NewSecurePass456!',
         })
         .expect(401);
 
@@ -430,13 +416,13 @@ describe('Authentication Controller', () => {
 
     it('should reject same password', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .post('/change-password')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           currentPassword: 'SecurePass123!',
-          newPassword: 'SecurePass123!'
+          newPassword: 'SecurePass123!',
         })
         .expect(400);
 
@@ -445,12 +431,12 @@ describe('Authentication Controller', () => {
 
     it('should validate required fields', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .post('/change-password')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
-          currentPassword: 'SecurePass123!'
+          currentPassword: 'SecurePass123!',
           // Missing newPassword
         })
         .expect(400);

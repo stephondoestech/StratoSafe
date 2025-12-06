@@ -12,10 +12,10 @@ interface EnvironmentConfig {
   // Server Configuration
   PORT: number;
   NODE_ENV: 'development' | 'production' | 'test';
-  
+
   // Security
   JWT_SECRET: string;
-  
+
   // Database Configuration
   DB_HOST: string;
   DB_PORT: number;
@@ -23,7 +23,7 @@ interface EnvironmentConfig {
   DB_PASSWORD: string;
   DB_DATABASE: string;
   DB_SSL: boolean;
-  
+
   // Optional
   LOG_LEVEL?: 'error' | 'warn' | 'info' | 'debug';
 
@@ -41,16 +41,10 @@ class ConfigError extends Error {
 }
 
 const validateAndGetConfig = (): EnvironmentConfig => {
-  const requiredVars = [
-    'JWT_SECRET',
-    'DB_HOST',
-    'DB_USERNAME',
-    'DB_PASSWORD',
-    'DB_DATABASE'
-  ];
+  const requiredVars = ['JWT_SECRET', 'DB_HOST', 'DB_USERNAME', 'DB_PASSWORD', 'DB_DATABASE'];
 
   const missingVars: string[] = [];
-  
+
   for (const varName of requiredVars) {
     if (!process.env[varName]) {
       missingVars.push(varName);
@@ -60,7 +54,7 @@ const validateAndGetConfig = (): EnvironmentConfig => {
   if (missingVars.length > 0) {
     throw new ConfigError(
       `Missing required environment variables: ${missingVars.join(', ')}\n` +
-      'Please copy .env.example to .env and fill in the required values.'
+        'Please copy .env.example to .env and fill in the required values.'
     );
   }
 
@@ -69,16 +63,14 @@ const validateAndGetConfig = (): EnvironmentConfig => {
   if (jwtSecret.length < 32) {
     throw new ConfigError(
       'JWT_SECRET must be at least 32 characters long for security. ' +
-      'Generate one with: openssl rand -base64 32'
+        'Generate one with: openssl rand -base64 32'
     );
   }
 
   // Validate NODE_ENV
   const nodeEnv = process.env.NODE_ENV || 'development';
   if (!['development', 'production', 'test'].includes(nodeEnv)) {
-    throw new ConfigError(
-      'NODE_ENV must be one of: development, production, test'
-    );
+    throw new ConfigError('NODE_ENV must be one of: development, production, test');
   }
 
   // Upload configuration
@@ -87,7 +79,10 @@ const validateAndGetConfig = (): EnvironmentConfig => {
     throw new ConfigError('UPLOAD_MAX_SIZE_MB must be a positive integer (megabytes).');
   }
 
-  const uploadAllowedMime = (process.env.UPLOAD_ALLOWED_MIME || 'image/png,image/jpeg,application/pdf,application/zip,text/plain')
+  const uploadAllowedMime = (
+    process.env.UPLOAD_ALLOWED_MIME ||
+    'image/png,image/jpeg,application/pdf,application/zip,text/plain'
+  )
     .split(',')
     .map((mime) => mime.trim())
     .filter(Boolean);
@@ -106,7 +101,7 @@ const validateAndGetConfig = (): EnvironmentConfig => {
     DB_PASSWORD: process.env.DB_PASSWORD!,
     DB_DATABASE: process.env.DB_DATABASE!,
     DB_SSL: process.env.DB_SSL === 'true',
-    LOG_LEVEL: process.env.LOG_LEVEL as 'error' | 'warn' | 'info' | 'debug' || 'info',
+    LOG_LEVEL: (process.env.LOG_LEVEL as 'error' | 'warn' | 'info' | 'debug') || 'info',
     UPLOAD_MAX_SIZE_MB: uploadMaxSizeMb,
     UPLOAD_MAX_SIZE_BYTES: uploadMaxSizeMb * 1024 * 1024,
     UPLOAD_ALLOWED_MIME: uploadAllowedMime,

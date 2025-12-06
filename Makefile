@@ -22,3 +22,18 @@ run:
 
 docker:
 	docker compose up --build
+
+# Developer helpers
+lint:
+	yarn workspace stratosafe-backend format:check
+	yarn workspace stratosafe-backend lint
+	yarn workspace stratosafe-frontend lint
+
+lint-fix:
+	yarn workspace stratosafe-backend format
+	yarn workspace stratosafe-backend lint:fix
+	yarn workspace stratosafe-frontend lint:fix
+
+hooks-install:
+	git config core.hooksPath .githooks
+	chmod +x .githooks/pre-commit

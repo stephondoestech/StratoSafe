@@ -1,0 +1,12 @@
+#!/bin/sh
+# Format and lint both workspaces before commit to keep CI clean.
+set -e
+
+echo "Running backend formatter..."
+yarn workspace stratosafe-backend format
+
+echo "Running backend lint fix..."
+yarn workspace stratosafe-backend lint:fix
+
+echo "Running frontend lint fix..."
+yarn workspace stratosafe-frontend lint:fix

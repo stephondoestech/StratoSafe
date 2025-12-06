@@ -6,7 +6,7 @@ export class MfaService {
   /**
    * Generate a new TOTP secret for a user
    */
-  static generateSecret(email: string): string {
+  static generateSecret(_email: string): string {
     return authenticator.generateSecret();
   }
 
@@ -23,7 +23,7 @@ export class MfaService {
   static async generateQrCode(totpUri: string): Promise<string> {
     try {
       return await QRCode.toDataURL(totpUri);
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Failed to generate QR code');
     }
   }
@@ -41,7 +41,7 @@ export class MfaService {
   static verifyToken(token: string, secret: string): boolean {
     try {
       return authenticator.verify({ token, secret });
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -57,10 +57,10 @@ export class MfaService {
 
     // Generate backup codes
     await user.generateBackupCodes();
-    
+
     // Enable MFA
     user.mfaEnabled = true;
-    
+
     return true;
   }
 

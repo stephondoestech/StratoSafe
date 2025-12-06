@@ -1,17 +1,24 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from "typeorm";
-import { File } from "./File";
-import * as bcrypt from "bcrypt";
-import * as crypto from "crypto";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { File } from './File';
+import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 // Define possible user roles
 export enum UserRole {
-  USER = "user",
-  ADMIN = "admin"
+  USER = 'user',
+  ADMIN = 'admin',
 }
 
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ unique: true })
@@ -27,13 +34,13 @@ export class User {
   lastName!: string;
 
   @Column({
-    type: "enum",
+    type: 'enum',
     enum: UserRole,
-    default: UserRole.USER
+    default: UserRole.USER,
   })
   role!: UserRole;
 
-  @OneToMany(() => File, file => file.owner)
+  @OneToMany(() => File, (file) => file.owner)
   files!: File[];
 
   @CreateDateColumn()
@@ -56,7 +63,7 @@ export class User {
   @Column({ default: 'light' })
   themePreference!: string;
 
-  async hashPassword() {
+  async hashPassword(): Promise<void> {
     this.password = await bcrypt.hash(this.password, 10);
   }
 
@@ -69,7 +76,7 @@ export class User {
     const codes: string[] = [];
     for (let i = 0; i < 10; i++) {
       // Generate 8-character uppercase hex from cryptographically secure bytes
-      const code = crypto.randomBytes(4).toString("hex").toUpperCase();
+      const code = crypto.randomBytes(4).toString('hex').toUpperCase();
       codes.push(code);
     }
     // Store hashed backup codes
@@ -79,21 +86,19 @@ export class User {
 
   // Store backup codes as hashed values
   private async storeBackupCodes(codes: string[]): Promise<void> {
-    const hashedCodes = await Promise.all(
-      codes.map(async (code) => await bcrypt.hash(code, 10))
-    );
+    const hashedCodes = await Promise.all(codes.map(async (code) => await bcrypt.hash(code, 10)));
     this.mfaBackupCodes = JSON.stringify(hashedCodes);
   }
 
   // Verify a backup code and remove it after use
   async verifyBackupCode(providedCode: string): Promise<boolean> {
     if (!this.mfaBackupCodes) return false;
-    
+
     const hashedCodes = JSON.parse(this.mfaBackupCodes);
-    
+
     for (let i = 0; i < hashedCodes.length; i++) {
       const isValid = await bcrypt.compare(providedCode, hashedCodes[i]);
-      
+
       if (isValid) {
         // Remove the used code
         hashedCodes.splice(i, 1);
@@ -101,7 +106,7 @@ export class User {
         return true;
       }
     }
-    
+
     return false;
   }
 

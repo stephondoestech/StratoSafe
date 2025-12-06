@@ -1,11 +1,11 @@
-import { DataSource } from "typeorm";
-import { User } from "./models/User";
-import { File } from "./models/File";
-import { SystemSettings } from "./models/SystemSettings";
-import { config } from "./config/environment";
+import { DataSource } from 'typeorm';
+import { User } from './models/User';
+import { File } from './models/File';
+import { SystemSettings } from './models/SystemSettings';
+import { config } from './config/environment';
 
 export const AppDataSource = new DataSource({
-  type: "postgres",
+  type: 'postgres',
   host: config.DB_HOST,
   port: config.DB_PORT,
   username: config.DB_USERNAME,

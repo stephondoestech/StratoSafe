@@ -7,12 +7,7 @@ import request from 'supertest';
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
-import { 
-  uploadFile, 
-  getUserFiles, 
-  downloadFile, 
-  deleteFile 
-} from '../controllers/fileController';
+import { uploadFile, getUserFiles, downloadFile, deleteFile } from '../controllers/fileController';
 import { authMiddleware } from '../middlewares/authMiddleware';
 import { errorHandler } from '../middlewares/errorMiddleware';
 import { AppDataSource } from '../data-source';
@@ -29,7 +24,7 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + '-' + file.originalname);
-  }
+  },
 });
 
 const upload = multer({ storage });
@@ -38,15 +33,15 @@ const upload = multer({ storage });
 const createTestApp = () => {
   const app = express();
   app.use(express.json());
-  
+
   // File routes
   app.post('/files/upload', authMiddleware, upload.single('file'), uploadFile);
   app.get('/files', authMiddleware, getUserFiles);
   app.get('/files/download/:id', authMiddleware, downloadFile);
   app.delete('/files/:id', authMiddleware, deleteFile);
-  
+
   app.use(errorHandler);
-  
+
   return app;
 };
 
@@ -61,7 +56,7 @@ describe('File Controller', () => {
 
   beforeAll(async () => {
     app = createTestApp();
-    
+
     try {
       if (!AppDataSource.isInitialized) {
         await AppDataSource.initialize();
@@ -70,10 +65,10 @@ describe('File Controller', () => {
       console.warn('Database not available for testing, skipping file tests');
       return;
     }
-    
+
     userRepository = AppDataSource.getRepository(User);
     fileRepository = AppDataSource.getRepository(File);
-    
+
     // Create test upload directory
     try {
       await fs.mkdir(testUploadDir, { recursive: true });
@@ -84,11 +79,11 @@ describe('File Controller', () => {
 
   beforeEach(async () => {
     if (!AppDataSource.isInitialized) return;
-    
+
     // Clean up
     await fileRepository.delete({});
     await userRepository.delete({});
-    
+
     // Create test users
     testUser = new User();
     testUser.email = 'test@example.com';
@@ -98,7 +93,7 @@ describe('File Controller', () => {
     testUser.role = UserRole.USER;
     await testUser.hashPassword();
     testUser = await userRepository.save(testUser);
-    
+
     otherUser = new User();
     otherUser.email = 'other@example.com';
     otherUser.password = 'SecurePass123!';
@@ -107,24 +102,22 @@ describe('File Controller', () => {
     otherUser.role = UserRole.USER;
     await otherUser.hashPassword();
     otherUser = await userRepository.save(otherUser);
-    
+
     // Generate auth tokens
-    authToken = jwt.sign(
-      { id: testUser.id, email: testUser.email },
-      process.env.JWT_SECRET!,
-      { expiresIn: '1h' }
-    );
-    
+    authToken = jwt.sign({ id: testUser.id, email: testUser.email }, process.env.JWT_SECRET!, {
+      expiresIn: '1h',
+    });
+
     otherUserToken = jwt.sign(
       { id: otherUser.id, email: otherUser.email },
       process.env.JWT_SECRET!,
       { expiresIn: '1h' }
     );
-    
+
     // Clean up test upload directory
     try {
       const files = await fs.readdir(testUploadDir);
-      await Promise.all(files.map(file => fs.unlink(path.join(testUploadDir, file))));
+      await Promise.all(files.map((file) => fs.unlink(path.join(testUploadDir, file))));
     } catch (error) {
       // Directory might be empty or not exist
     }
@@ -134,12 +127,12 @@ describe('File Controller', () => {
     // Clean up test files and directory
     try {
       const files = await fs.readdir(testUploadDir);
-      await Promise.all(files.map(file => fs.unlink(path.join(testUploadDir, file))));
+      await Promise.all(files.map((file) => fs.unlink(path.join(testUploadDir, file))));
       await fs.rmdir(testUploadDir);
     } catch (error) {
       // Directory might not exist
     }
-    
+
     if (AppDataSource.isInitialized) {
       await AppDataSource.destroy();
     }
@@ -148,11 +141,11 @@ describe('File Controller', () => {
   describe('POST /files/upload', () => {
     it('should upload a file successfully', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const testContent = 'This is a test file content';
       const testFilePath = path.join(__dirname, 'test-file.txt');
       await fs.writeFile(testFilePath, testContent);
-      
+
       try {
         const response = await request(app)
           .post('/files/upload')
@@ -166,10 +159,10 @@ describe('File Controller', () => {
         expect(response.body.file.originalName).toBe('test-file.txt');
         expect(response.body.file.description).toBe('Test file upload');
         expect(response.body.file.size).toBeGreaterThan(0);
-        
+
         // Verify file exists in database
         const savedFile = await fileRepository.findOne({
-          where: { id: response.body.file.id }
+          where: { id: response.body.file.id },
         });
         expect(savedFile).toBeDefined();
         expect(savedFile.owner.id).toBe(testUser.id);
@@ -180,10 +173,8 @@ describe('File Controller', () => {
 
     it('should require authentication', async () => {
       if (!AppDataSource.isInitialized) return;
-      
-      await request(app)
-        .post('/files/upload')
-        .expect(401);
+
+      await request(app).post('/files/upload').expect(401);
     });
   });
 
@@ -192,7 +183,7 @@ describe('File Controller', () => {
 
     beforeEach(async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Create a test file in database
       testFile = new File();
       testFile.filename = 'test-file.txt';
@@ -207,7 +198,7 @@ describe('File Controller', () => {
 
     it('should get user files', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .get('/files')
         .set('Authorization', `Bearer ${authToken}`)
@@ -221,7 +212,7 @@ describe('File Controller', () => {
 
     it('should only return files owned by authenticated user', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Create file for other user
       const otherFile = new File();
       otherFile.filename = 'other-file.txt';
@@ -243,10 +234,8 @@ describe('File Controller', () => {
 
     it('should require authentication', async () => {
       if (!AppDataSource.isInitialized) return;
-      
-      await request(app)
-        .get('/files')
-        .expect(401);
+
+      await request(app).get('/files').expect(401);
     });
   });
 
@@ -255,7 +244,7 @@ describe('File Controller', () => {
 
     beforeEach(async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       // Create file record
       testFile = new File();
       testFile.filename = 'delete-test.txt';
@@ -269,24 +258,24 @@ describe('File Controller', () => {
 
     it('should reject deletion of file not owned by user', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .delete(`/files/${testFile.id}`)
         .set('Authorization', `Bearer ${otherUserToken}`)
         .expect(404);
 
       expect(response.body.message).toBe('File not found');
-      
+
       // Verify file still exists
       const stillExists = await fileRepository.findOne({
-        where: { id: testFile.id }
+        where: { id: testFile.id },
       });
       expect(stillExists).toBeDefined();
     });
 
     it('should handle non-existent file', async () => {
       if (!AppDataSource.isInitialized) return;
-      
+
       const response = await request(app)
         .delete('/files/non-existent-id')
         .set('Authorization', `Bearer ${authToken}`)
@@ -297,10 +286,8 @@ describe('File Controller', () => {
 
     it('should require authentication', async () => {
       if (!AppDataSource.isInitialized) return;
-      
-      await request(app)
-        .delete(`/files/${testFile.id}`)
-        .expect(401);
+
+      await request(app).delete(`/files/${testFile.id}`).expect(401);
     });
   });
 });

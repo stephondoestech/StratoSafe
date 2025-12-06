@@ -1,29 +1,29 @@
-import { Router } from "express";
-import rateLimit from "express-rate-limit";
-import { 
-  generateMfaSetup, 
-  verifyAndEnableMfa, 
-  disableMfa, 
+import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
+import {
+  generateMfaSetup,
+  verifyAndEnableMfa,
+  disableMfa,
   getMfaStatus,
   generateBackupCodes,
-  verifyMfaToken
-} from "../controllers/mfaController";
-import { authMiddleware } from "../middlewares/authMiddleware";
-import { adminMiddleware } from "../middlewares/adminMiddleware";
-import { 
-  register, 
-  login, 
-  getUserProfile, 
+  verifyMfaToken,
+} from '../controllers/mfaController';
+import { authMiddleware } from '../middlewares/authMiddleware';
+import { adminMiddleware } from '../middlewares/adminMiddleware';
+import {
+  register,
+  login,
+  getUserProfile,
   updateUserProfile,
   updateThemePreference,
-  changePassword
-} from "../controllers/userController";
+  changePassword,
+} from '../controllers/userController';
 import {
   getSystemSettings,
   updateSystemSettings,
   getUsersWithRoles,
-  updateUserRole
-} from "../controllers/systemSettingsController";
+  updateUserRole,
+} from '../controllers/systemSettingsController';
 
 const router = Router();
 
@@ -37,35 +37,40 @@ const limiter = rateLimit({
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // limit each IP to 10 requests per windowMs
-  message: "Too many authentication attempts, please try again later."
+  message: 'Too many authentication attempts, please try again later.',
 });
 
 // Auth routes
-router.post("/register", register as any);
-router.post("/login", login as any);
-router.get("/profile", authMiddleware as any, getUserProfile as any);
-router.put("/profile", authMiddleware as any, updateUserProfile as any);
+router.post('/register', register as any);
+router.post('/login', login as any);
+router.get('/profile', authMiddleware as any, getUserProfile as any);
+router.put('/profile', authMiddleware as any, updateUserProfile as any);
 
 // Theme preference route
-router.put("/theme-preference", authMiddleware as any, updateThemePreference as any);
+router.put('/theme-preference', authMiddleware as any, updateThemePreference as any);
 
 // New password change route with stricter rate limiting
-router.post("/change-password", authLimiter, authMiddleware as any, changePassword as any);
+router.post('/change-password', authLimiter, authMiddleware as any, changePassword as any);
 
 // MFA routes
-router.post("/verify-mfa", limiter, verifyMfaToken as any);
-router.get("/mfa/setup", limiter, authMiddleware as any, generateMfaSetup as any);
-router.post("/mfa/enable", limiter, authMiddleware as any, verifyAndEnableMfa as any);
-router.post("/mfa/disable", limiter, authMiddleware as any, disableMfa as any);
-router.get("/mfa/status", limiter, authMiddleware as any, getMfaStatus as any);
-router.post("/mfa/backup-codes", limiter, authMiddleware as any, generateBackupCodes as any);
+router.post('/verify-mfa', limiter, verifyMfaToken as any);
+router.get('/mfa/setup', limiter, authMiddleware as any, generateMfaSetup as any);
+router.post('/mfa/enable', limiter, authMiddleware as any, verifyAndEnableMfa as any);
+router.post('/mfa/disable', limiter, authMiddleware as any, disableMfa as any);
+router.get('/mfa/status', limiter, authMiddleware as any, getMfaStatus as any);
+router.post('/mfa/backup-codes', limiter, authMiddleware as any, generateBackupCodes as any);
 
 // System settings routes
-router.get("/system-settings", authMiddleware as any, getSystemSettings as any);
-router.put("/system-settings", authMiddleware as any, adminMiddleware as any, updateSystemSettings as any);
+router.get('/system-settings', authMiddleware as any, getSystemSettings as any);
+router.put(
+  '/system-settings',
+  authMiddleware as any,
+  adminMiddleware as any,
+  updateSystemSettings as any
+);
 
 // User role management routes (admin only)
-router.get("/users", authMiddleware as any, adminMiddleware as any, getUsersWithRoles as any);
-router.put("/user-role", authMiddleware as any, adminMiddleware as any, updateUserRole as any);
+router.get('/users', authMiddleware as any, adminMiddleware as any, getUsersWithRoles as any);
+router.put('/user-role', authMiddleware as any, adminMiddleware as any, updateUserRole as any);
 
 export default router;

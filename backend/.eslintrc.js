@@ -3,7 +3,7 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 2020,
     sourceType: 'module',
-    project: './tsconfig.json',
+    project: './tsconfig.eslint.json',
   },
   plugins: ['@typescript-eslint', 'prettier'],
   extends: [
@@ -13,10 +13,32 @@ module.exports = {
   ],
   rules: {
     'prettier/prettier': 'error',
-    '@typescript-eslint/no-unused-vars': 'error',
-    '@typescript-eslint/explicit-function-return-type': 'warn',
-    '@typescript-eslint/no-explicit-any': 'warn',
-    'no-console': 'warn', // Discourage console.log in production
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+    ],
+    '@typescript-eslint/no-namespace': 'off',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
+    'no-console': 'off',
   },
+  overrides: [
+    {
+      files: ['**/__tests__/**/*.ts'],
+      rules: {
+        '@typescript-eslint/no-unused-vars': 'off',
+        '@typescript-eslint/no-require-imports': 'off',
+        '@typescript-eslint/explicit-function-return-type': 'off',
+        '@typescript-eslint/no-explicit-any': 'off',
+        'no-console': 'off',
+      },
+    },
+    {
+      files: ['**/*.d.ts'],
+      rules: {
+        '@typescript-eslint/no-unused-vars': 'off',
+      },
+    },
+  ],
   ignorePatterns: ['dist/', 'node_modules/'],
 };

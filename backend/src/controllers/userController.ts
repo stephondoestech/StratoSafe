@@ -1,9 +1,9 @@
-import { Request, Response } from "express";
-import { AppDataSource } from "../data-source";
-import { User, UserRole } from "../models/User";
-import * as jwt from "jsonwebtoken";
-import * as dotenv from "dotenv";
-import { isRegistrationAllowed } from "./systemSettingsController";
+import { Request, Response } from 'express';
+import { AppDataSource } from '../data-source';
+import { User, UserRole } from '../models/User';
+import * as jwt from 'jsonwebtoken';
+import * as dotenv from 'dotenv';
+import { isRegistrationAllowed } from './systemSettingsController';
 
 dotenv.config();
 
@@ -13,10 +13,10 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     // Check registration status
     const registrationAllowed = await isRegistrationAllowed();
-    
+
     if (!registrationAllowed) {
-      console.log("Registration rejected - registration is currently disabled");
-      res.status(403).json({ message: "User registration is currently disabled" });
+      console.log('Registration rejected - registration is currently disabled');
+      res.status(403).json({ message: 'User registration is currently disabled' });
       return;
     }
 
@@ -25,7 +25,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     // Check if user already exists
     const existingUser = await userRepository.findOne({ where: { email } });
     if (existingUser) {
-      res.status(400).json({ message: "User already exists" });
+      res.status(400).json({ message: 'User already exists' });
       return;
     }
 
@@ -36,7 +36,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     user.firstName = firstName;
     user.lastName = lastName;
     user.themePreference = 'light'; // Default to light theme
-    
+
     // Check if this is the first user
     const userCount = await userRepository.count();
     if (userCount === 0) {
@@ -52,15 +52,15 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     // Save user to database
     await userRepository.save(user);
-    
+
     console.log(`New user registered: ${email} with role: ${user.role}`);
 
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;
     res.status(201).json(userWithoutPassword);
   } catch (error) {
-    console.error("Error registering user:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error('Error registering user:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -71,14 +71,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     // Find user by email
     const user = await userRepository.findOne({ where: { email } });
     if (!user) {
-      res.status(401).json({ message: "Invalid credentials" });
+      res.status(401).json({ message: 'Invalid credentials' });
       return;
     }
 
     // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      res.status(401).json({ message: "Invalid credentials" });
+      res.status(401).json({ message: 'Invalid credentials' });
       return;
     }
 
@@ -88,7 +88,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       res.json({
         requiresMfa: true,
         email: user.email,
-        message: "MFA verification required"
+        message: 'MFA verification required',
       });
       return;
     }
@@ -100,21 +100,19 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+      expiresIn: '1d',
+    });
 
     // Return user info and token
     const { password: _, mfaSecret: __, mfaBackupCodes: ___, ...userWithoutSensitiveInfo } = user;
     res.json({
       user: userWithoutSensitiveInfo,
-      token
+      token,
     });
   } catch (error) {
-    console.error("Error logging in:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error('Error logging in:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -122,23 +120,23 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
   try {
     // User ID is set by auth middleware
     const userId = req.user?.id;
-    
-    const user = await userRepository.findOne({ 
+
+    const user = await userRepository.findOne({
       where: { id: userId },
-      relations: ["files"]
+      relations: ['files'],
     });
-    
+
     if (!user) {
-      res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: 'User not found' });
       return;
     }
-    
+
     // Return user without sensitive information
     const { password: _, mfaSecret: __, mfaBackupCodes: ___, ...userWithoutSensitiveInfo } = user;
     res.json(userWithoutSensitiveInfo);
   } catch (error) {
-    console.error("Error getting user profile:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error('Error getting user profile:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -150,7 +148,7 @@ export const updateUserProfile = async (req: Request, res: Response): Promise<vo
     // Find the user
     const user = await userRepository.findOne({ where: { id: userId } });
     if (!user) {
-      res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: 'User not found' });
       return;
     }
 
@@ -158,7 +156,7 @@ export const updateUserProfile = async (req: Request, res: Response): Promise<vo
     if (email && email !== user.email) {
       const existingUser = await userRepository.findOne({ where: { email } });
       if (existingUser) {
-        res.status(400).json({ message: "Email already in use" });
+        res.status(400).json({ message: 'Email already in use' });
         return;
       }
       user.email = email;
@@ -168,7 +166,7 @@ export const updateUserProfile = async (req: Request, res: Response): Promise<vo
     if (firstName) {
       user.firstName = firstName;
     }
-    
+
     if (lastName) {
       user.lastName = lastName;
     }
@@ -185,8 +183,8 @@ export const updateUserProfile = async (req: Request, res: Response): Promise<vo
     const { password: _, mfaSecret: __, mfaBackupCodes: ___, ...userWithoutSensitiveInfo } = user;
     res.json(userWithoutSensitiveInfo);
   } catch (error) {
-    console.error("Error updating user profile:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error('Error updating user profile:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -205,7 +203,7 @@ export const updateThemePreference = async (req: Request, res: Response): Promis
     // Find the user
     const user = await userRepository.findOne({ where: { id: userId } });
     if (!user) {
-      res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: 'User not found' });
       return;
     }
 
@@ -215,14 +213,14 @@ export const updateThemePreference = async (req: Request, res: Response): Promis
     // Save the updated user
     await userRepository.save(user);
 
-    res.json({ 
-      success: true, 
-      message: "Theme preference updated successfully",
-      themePreference: user.themePreference
+    res.json({
+      success: true,
+      message: 'Theme preference updated successfully',
+      themePreference: user.themePreference,
     });
   } catch (error) {
-    console.error("Error updating theme preference:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error('Error updating theme preference:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -234,28 +232,28 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
 
     // Validate request
     if (!currentPassword || !newPassword) {
-      res.status(400).json({ message: "Current password and new password are required" });
+      res.status(400).json({ message: 'Current password and new password are required' });
       return;
     }
 
     // Find the user
     const user = await userRepository.findOne({ where: { id: userId } });
     if (!user) {
-      res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: 'User not found' });
       return;
     }
 
     // Verify current password
     const isPasswordValid = await user.comparePassword(currentPassword);
     if (!isPasswordValid) {
-      res.status(401).json({ message: "Current password is incorrect" });
+      res.status(401).json({ message: 'Current password is incorrect' });
       return;
     }
 
     // Check if new password is same as current
     const isSamePassword = await user.comparePassword(newPassword);
     if (isSamePassword) {
-      res.status(400).json({ message: "New password must be different from current password" });
+      res.status(400).json({ message: 'New password must be different from current password' });
       return;
     }
 
@@ -264,12 +262,12 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
     await user.hashPassword();
     await userRepository.save(user);
 
-    res.json({ 
-      success: true, 
-      message: "Password changed successfully" 
+    res.json({
+      success: true,
+      message: 'Password changed successfully',
     });
   } catch (error) {
-    console.error("Error changing password:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error('Error changing password:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };

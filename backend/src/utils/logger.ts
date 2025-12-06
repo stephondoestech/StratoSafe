@@ -22,11 +22,11 @@ const shouldLog = (level: string): boolean => {
   const currentLevel = process.env.LOG_LEVEL || 'info';
   const currentIndex = levels.indexOf(currentLevel);
   const requestedIndex = levels.indexOf(level);
-  
+
   return requestedIndex <= currentIndex;
 };
 
-const formatMessage = (level: string, message: string, meta?: any): string => {
+const formatMessage = (level: string, message: string, meta?: unknown): string => {
   const timestamp = new Date().toISOString();
   const logEntry = {
     timestamp,
@@ -34,30 +34,31 @@ const formatMessage = (level: string, message: string, meta?: any): string => {
     message,
     ...(meta && { meta }),
   };
-  
+
   return JSON.stringify(logEntry);
 };
 
+/* eslint-disable no-console */
 export const logger = {
-  error: (message: string, error?: any): void => {
+  error: (message: string, error?: unknown): void => {
     if (shouldLog(LOG_LEVEL.ERROR)) {
       console.error(formatMessage(LOG_LEVEL.ERROR, message, error));
     }
   },
 
-  warn: (message: string, meta?: any): void => {
+  warn: (message: string, meta?: unknown): void => {
     if (shouldLog(LOG_LEVEL.WARN)) {
       console.warn(formatMessage(LOG_LEVEL.WARN, message, meta));
     }
   },
 
-  info: (message: string, meta?: any): void => {
+  info: (message: string, meta?: unknown): void => {
     if (shouldLog(LOG_LEVEL.INFO)) {
       console.log(formatMessage(LOG_LEVEL.INFO, message, meta));
     }
   },
 
-  debug: (message: string, meta?: any): void => {
+  debug: (message: string, meta?: unknown): void => {
     if (shouldLog(LOG_LEVEL.DEBUG)) {
       console.log(formatMessage(LOG_LEVEL.DEBUG, message, meta));
     }
